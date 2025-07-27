@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Processo Isotérmico</title>
+  <style>
+    :root {
+      --cilindro-altura: 300px;
+      --cilindro-largura: 200px;
+      --pistao-altura: 20px;
+    }
+
+    body {
+      margin: 0;
+      background: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      height: 100vh;
+      justify-content: flex-start;
+      padding-top: 20px;
+    }
+
+    h1 { margin: 0; font-size: 1.6rem; }
+    p.desc { margin: 0; font-size: 0.9rem; max-width: 500px; text-align: center; }
+
+    .scene { display: flex; align-items: flex-start; }
+
+    .reservatorio {
+      width: 80px; height: var(--cilindro-altura); border: 4px solid #333; border-right: 4px dotted #333;
+      background: #f5f5dc; margin-right: -4px; display: flex; justify-content: center; align-items: center; }
+    .reservatorio span { transform: rotate(-90deg); font-weight: bold; white-space: nowrap; }
+
+    .cilindro {
+      position: relative; width: var(--cilindro-largura); height: var(--cilindro-altura);
+      border-left: 4px dotted #333; border-right: 4px solid #333; border-bottom: 4px solid #333;
+      background: #fff; overflow: hidden; }
+
+    .gas { position: absolute; left: 0; width: 100%; background: #ddd; bottom: 0; }
+    .pistao { position: absolute; left: 0; width: 100%; height: var(--pistao-altura); background: #777; z-index: 2; }
+
+    .arrow-horizontal, .arrow-vertical { position: absolute; }
+    .label-q, .label-w, .label-u { position: absolute; font-weight: bold; font-size: 18px; user-select: none; }
+
+    #sliderVolume { width: 260px; }
+
+    /* posições fixas dentro do cilindro */
+    .arrow-horizontal { left: 6px; bottom: 10px; width: 100px; height: 40px; }
+    .label-q         { left: 12px; bottom: 30px; color: red; }
+
+    .arrow-vertical  { right: 10px; width: 20px; height: 50px; }
+    .label-w         { right: 40px; color: blue; }
+
+    .label-u { right: 12px; bottom: 10px; color: #000; }
+
+    footer { margin-top: auto; font-size: 0.75rem; text-align: center; padding: 10px; line-height: 1.2; }
+    footer a { color: #006; }
+  </style>
+</head>
+<body>
+  <h1>Processo Isotérmico</h1>
+  <p class="desc">Use o controle deslizante para variar o volume do gás dentro do cilindro. O simulador apresenta o sentido do calor (ΔQ) entre o reservatório térmico e o gás, bem como o trabalho (ΔW) realizado durante a expansão ou compressão isotérmica.</p>
+
+  <input id="sliderVolume" type="range" min="0" max="100" value="100" />
+
+  <div class="scene">
+    <div class="reservatorio"><span>reservatório térmico</span></div>
+
+    <div class="cilindro" id="cilindro">
+      <div class="gas" id="gas"></div>
+      <div class="pistao" id="pistao"></div>
+
+      <!-- Calor -->
+      <div class="arrow-horizontal" id="arrowQ">
+        <svg viewBox="0 0 100 40" width="100" height="40">
+          <line x1="0" y1="20" x2="100" y2="20" stroke="red" stroke-width="4" />
+          <polygon id="headQ" points="90,10 90,30 100,20" fill="red" />
+        </svg>
+      </div>
+      <div class="label-q" id="labelQ">ΔQ&nbsp;&lt;&nbsp;0</div>
+
+      <!-- Trabalho -->
+      <div class="arrow-vertical" id="arrowW">
+        <svg viewBox="0 0 20 50" width="20" height="50">
+          <line x1="10" y1="50" x2="10" y2="0" stroke="blue" stroke-width="4" />
+          <polygon id="headW" points="5,15 15,15 10,0" fill="blue" />
+        </svg>
+      </div>
+      <div class="label-w" id="labelW">ΔW&nbsp;&gt;&nbsp;0</div>
+
+      <!-- Energia interna -->
+      <div class="label-u">ΔU</div>
+    </div>
+  </div>
+
+  <footer>
+    Desenvolvido por Mario Reis &ndash; Instituto de Física, Universidade Federal Fluminense (UFF)<br>
+    <a href="mailto:marioreis@id.uff.br">marioreis@id.uff.br</a> &middot; <a href="http://profmarioreis.wordpress.com" target="_blank">profmarioreis.wordpress.com</a><br>
+    Versão 1.0 &ndash; 26 de julho de 2025
+  </footer>
+
+  <script>
+    const pistaoAltura = 20;
+    const pistaoMinTop = 30;
+    const pistaoMaxTop = 200;
+
+    const slider  = document.getElementById('sliderVolume');
+    const pistao  = document.getElementById('pistao');
+    const gas     = document.getElementById('gas');
+    const arrowW  = document.getElementById('arrowW');
+    const labelW  = document.getElementById('labelW');
+    const arrowQ  = document.getElementById('arrowQ');
+    const labelQ  = document.getElementById('labelQ');
+
+    let prevVal = +slider.value;
+    updateScene(+slider.value, prevVal - 1);
+
+    slider.addEventListener('input', e => {
+      const val = +e.target.value;
+      updateScene(val, prevVal);
+      prevVal = val;
+    });
+
+    function updateScene(val, prev) {
+      const topPistao = pistaoMinTop + (val / 100) * (pistaoMaxTop - pistaoMinTop);
+      pistao.style.top = topPistao + 'px';
+      gas.style.top    = (topPistao + pistaoAltura) + 'px';
+
+      const arrowWTop = topPistao + pistaoAltura + 5;
+      arrowW.style.top = arrowWTop + 'px';
+      labelW.style.top = (arrowWTop + 20) + 'px';
+
+      const direita  = val > prev;
+      const esquerda = val < prev;
+
+      if (direita) {
+        arrowQ.style.transform = 'scaleX(-1)';
+        labelQ.innerHTML = 'ΔQ&nbsp;&lt;&nbsp;0';
+        arrowW.style.transform = 'scaleY(-1)';
+        labelW.innerHTML = 'ΔW&nbsp;&gt;&nbsp;0';
+      } else if (esquerda) {
+        arrowQ.style.transform = 'scaleX(1)';
+        labelQ.innerHTML = 'ΔQ&nbsp;&gt;&nbsp;0';
+        arrowW.style.transform = 'scaleY(1)';
+        labelW.innerHTML = 'ΔW&nbsp;&lt;&nbsp;0';
+      }
+    }
+  </script>
+</body>
+</html>
