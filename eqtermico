@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Equilíbrio Térmico — Múltiplos Materiais</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;margin:20px}
+  h1{margin:0}
+  .desc{margin:4px 0 14px 0;font-size:0.92rem}
+  .credits{font-size:0.8rem;line-height:1.15}
+  label{display:inline-block;width:110px;margin-bottom:4px}
+  input[type="number"]{width:90px}
+  select{min-width:140px}
+  .material{border:1px solid #ccc;padding:8px;margin-bottom:8px;border-radius:6px}
+  .flex{display:flex;gap:32px;align-items:flex-start}
+  .result{white-space:pre;font-family:monospace}
+  .btn{margin:6px 4px}
+</style>
+</head>
+
+<body>
+<h1>Simulador de Equilíbrio Térmico</h1>
+<p class="desc">Adicione quantos blocos quiser, informando massa e temperatura inicial. Escolha também o material, para preencher automaticamente o calor específico; ou insira um valor personalizado. Clique em 'Calcular' para obter a temperatura de equilíbrio T_f do sistema e o calor ΔQ absorvido ou cedido por cada bloco, exibidos em unidades do SI.</p>
+<p class="credits">
+  Desenvolvido por Mario Reis – Instituto de Física, Universidade Federal Fluminense (UFF)<br>
+  <a href="mailto:marioreis@id.uff.br">marioreis@id.uff.br</a> · <a href="http://profmarioreis.wordpress.com" target="_blank">profmarioreis.wordpress.com</a><br>
+  Versão 1.0 – 26 de julho de 2025
+</p>
+
+<div class="flex">
+  <!-- Entrada -->
+  <div>
+    <button class="btn" onclick="addMaterial()">Adicionar material</button>
+    <button class="btn" onclick="calcular()">Calcular</button>
+
+    <div id="inputs"></div>
+  </div>
+
+  <!-- Saída -->
+  <div class="result" id="saida">Adicione materiais e clique em Calcular.</div>
+</div>
+
+<script>
+// tabela com alguns calores específicos (J/kg·K) a 25 °C – gelo removido
+const tabelaC = {
+  'Água (líquida)':4184,
+  'Álcool etílico':2440,
+  'Alumínio':897,
+  'Cobre':385,
+  'Ferro':449,
+  'Aço':490,
+  'Prata':235,
+  'Ouro':129,
+  'Chumbo':128,
+  'PVC':900,
+  'Polietileno':2300,
+  'Vidro':800
+};
+let contador = 0;
+
+function addMaterial(){
+  contador++;
+  const div = document.getElementById('inputs');
+  const opcoes = Object.keys(tabelaC)
+                       .map(n=>`<option value="${n}">${n}</option>`)
+                       .join('');
+  div.insertAdjacentHTML('beforeend',`
+    <div class="material" id="mat${contador}">
+      <strong>Material ${contador}</strong>
+      <button style="float:right" onclick="this.parentNode.remove()">✖</button><br>
+      <label>Massa (kg):</label>
+      <input type="number" step="any" id="m${contador}" required><br>
+
+      <label>Material:</label>
+      <select id="sel${contador}" onchange="atualizarC(${contador})">
+        <option value="" selected disabled>— selecione —</option>
+        ${opcoes}
+        <option value="Outro">Outro (personalizado)</option>
+      </select><br>
+
+      <span id="cbox${contador}">
+        <label>c (J/kg·K):</label>
+        <input type="number" step="any" id="c${contador}" readonly>
+      </span><br>
+
+      <label>T<sub>i</sub> (K):</label>
+      <input type="number" step="any" id="T${contador}" required>
+    </div>
+  `);
+}
+
+function atualizarC(i){
+  const sel = document.getElementById('sel'+i).value;
+  const cInput = document.getElementById('c'+i);
+  if(sel==='Outro'){
+    cInput.readOnly = false;
+    cInput.value = '';
+    cInput.focus();
+  }else{
+    cInput.readOnly = true;
+    cInput.value = tabelaC[sel];
+  }
+}
+
+function calcular(){
+  const materiais = document.querySelectorAll('.material');
+  if(!materiais.length){alert('Adicione pelo menos um material.');return;}
+
+  let soma_mcT = 0, soma_mc = 0, dados=[];
+  for(const mat of materiais){
+    const id = mat.id.replace('mat','');
+    const m = +document.getElementById('m'+id).value;
+    const c = +document.getElementById('c'+id).value;
+    const T = +document.getElementById('T'+id).value;
+    if(!(m&&c&&T)){alert(`Preencha todos os campos do Material ${id}.`);return;}
+    soma_mcT += m*c*T;
+    soma_mc  += m*c;
+    dados.push({id,m,c,T});
+  }
+  const Tf = soma_mcT / soma_mc;
+  let txt = `T_f = ${Tf.toFixed(3)} K\n\n`;
+  dados.forEach(d=>{
+    const dQ = d.m*d.c*(Tf - d.T);
+    const sentido = dQ>0?'absorvido':'cedido';
+    txt += `Material ${d.id}: ΔQ = ${dQ.toFixed(3)} J (${sentido})\n`;
+  });
+  document.getElementById('saida').textContent = txt;
+}
+
+// cria dois blocos por padrão
+addMaterial(); addMaterial();
+</script>
+</body>
+</html>
