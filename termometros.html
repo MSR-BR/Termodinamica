@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Termômetros: Celsius (−20 a 120 °C) como referência</title>
+  <title>Sliders de Temperatura com Mostradores Analógicos (−20 °C a 120 °C)</title>
   <style>
     :root{
       --bg:#0f172a;            /* slate-900 */
@@ -11,8 +11,9 @@
       --muted:#94a3b8;         /* slate-400 */
       --text:#e5e7eb;          /* gray-200 */
       --glass:rgba(255,255,255,0.08);
-      --blue:#3b82f6;
-      --red:#ef4444;
+      --blue:#3b82f6;          /* frio */
+      --red:#ef4444;           /* quente */
+      --ok:#22c55e;
     }
     *{box-sizing:border-box}
     body{
@@ -22,182 +23,222 @@
       min-height:100svh; display:flex; flex-direction:column; gap:18px;
     }
     header{ padding:22px 20px 0; text-align:center}
-    header h1{ margin:0 0 6px; font-weight:700; letter-spacing:.2px; }
+    header h1{ margin:0 0 6px; font-weight:700; letter-spacing:.2px }
     header p{ margin:0; color:var(--muted); font-size:14px }
-
-    .app{ width:min(1080px, 95%); margin:0 auto 28px; }
 
     .about{ width:min(1080px,95%); margin:0 auto; background:var(--panel); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:14px 16px; box-shadow:0 10px 30px rgba(0,0,0,.35)}
     .about p{ margin:.2rem 0; line-height:1.35 }
     .about a{ color:#93c5fd; text-decoration:underline }
 
-    /* Slider card */
-    .control{
-      background:var(--panel); border:1px solid rgba(255,255,255,.06); border-radius:16px;
-      padding:18px 20px; box-shadow:0 10px 30px rgba(0,0,0,.35);
-    }
-    .row{ display:flex; align-items:center; gap:16px; flex-wrap:wrap }
-    .row label{ font-weight:600; color:#d1d5db }
-    .val{ font-variant-numeric:tabular-nums; font-weight:700; padding:4px 10px; border-radius:10px; background:var(--glass); }
+    .app{ width:min(1100px, 95%); margin:0 auto 28px; display:flex; flex-direction:column; gap:14px }
 
-    /* Gradient slider */
-    input[type="range"]{ -webkit-appearance:none; appearance:none; width:100%; height:10px; border-radius:999px; background:linear-gradient(90deg, var(--blue), var(--red)); outline:none }
+    .row{ display:flex; align-items:center; gap:18px; background:var(--panel); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:14px 16px; box-shadow:0 10px 30px rgba(0,0,0,.35) }
+    .label{ width:130px; font-weight:700 }
+
+    /* Slider (horizontal) */
+    .slider-wrap{ flex:1; display:flex; flex-direction:column; gap:6px }
+    input[type="range"]{ -webkit-appearance:none; appearance:none; width:100%; height:12px; border-radius:999px; background:linear-gradient(90deg, var(--blue), var(--red)); outline:none; border:1px solid rgba(255,255,255,.08)}
     input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:22px; height:22px; border-radius:50%; background:#fff; border:3px solid #0ea5e9; box-shadow:0 4px 12px rgba(14,165,233,.5) }
     input[type="range"]::-moz-range-thumb{ width:22px; height:22px; border:none; border-radius:50%; background:#fff; box-shadow:0 4px 12px rgba(14,165,233,.5) }
 
-    .scale-legend{ display:flex; justify-content:space-between; font-size:12px; color:var(--muted) }
-
-    /* Thermometer grid */
-    .grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-top:18px }
-    @media (max-width: 860px){ .grid{ grid-template-columns:1fr; } }
-
-    .card{
-      background:var(--panel); border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.35)
-    }
-    .title{ font-weight:700; letter-spacing:.3px }
-
-    /* Thermometer visuals */
-    .thermo-wrap{ height:200px; display:flex; align-items:flex-end; justify-content:center; padding:10px 0 }
-    .thermo{
-      position:relative; width:54px; height:180px; border-radius:28px; background:linear-gradient(180deg, #0b1020, #0a0f1b);
-      border:1px solid rgba(255,255,255,.08); box-shadow:inset 0 0 0 2px rgba(255,255,255,.05), inset 0 -8px 20px rgba(239,68,68,.08);
-      overflow:hidden
-    }
-    .thermo::after{ content:""; position:absolute; inset:0; background:linear-gradient(120deg, rgba(255,255,255,.10), transparent 35%); pointer-events:none }
-    .mercury{ position:absolute; bottom:0; left:0; right:0; height:0%; background:linear-gradient(180deg, #60a5fa 0%, #ef4444 100%); transition:height .25s ease }
-
-    .readout{ display:flex; flex-direction:column; align-items:center; gap:6px }
-    .digital{ min-width:140px; padding:8px 12px; border-radius:12px; background:var(--glass); border:1px solid rgba(255,255,255,.06); font-size:20px; font-variant-numeric:tabular-nums; font-weight:700 }
-    .unit{ font-size:12px; color:var(--muted) }
+    .val{ font-variant-numeric:tabular-nums; font-weight:700; padding:4px 8px; border-radius:8px; background:var(--glass); display:inline-block }
     .hint{ font-size:12px; color:var(--muted) }
-    .footer-note{ margin-top:8px; font-size:12px; color:var(--muted); text-align:center }
+
+    /* Gauge (mostrador analógico) */
+    .gauge{ width:140px; height:140px; position:relative }
+    .gauge svg{ width:140px; height:140px; display:block }
+    .gauge .center-text{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-variant-numeric:tabular-nums }
+    .gauge .unit{ position:absolute; bottom:10px; width:100%; text-align:center; font-size:12px; color:var(--muted) }
+
+    @media (max-width: 720px){
+      .row{ flex-direction:column; align-items:stretch }
+      .label{ width:auto }
+      .gauge{ align-self:center }
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1>Conversor Visual de Temperatura</h1>
-    <p>Controle principal em <strong>Celsius</strong> (−20 °C a 120 °C). As leituras são exibidas também em Fahrenheit e Kelvin.</p>
+    <h1>Sliders sincronizados: °C, °F e K</h1>
+    <p>Controle qualquer escala. O intervalo global é <strong>−20 °C a 120 °C</strong> (equivalente a −4 °F a 248 °F, 253.15 K a 393.15 K). Os mostradores analógicos refletem a posição relativa em cada escala.</p>
   </header>
 
   <div class="about">
-    <p><strong>Como usar:</strong> Use o <em>controle deslizante</em> para escolher a temperatura em Celsius. Cada cartão mostra o mesmo valor nas três escalas, com um <em>termômetro analógico</em> (coluna colorida) e uma <em>leitura digital</em> abaixo. A coluna representa a fração dentro do intervalo exibido para cada escala.</p>
+    <p><strong>Como usar:</strong> Arraste um dos <em>três controles deslizantes</em> (Celsius, Fahrenheit ou Kelvin). Os demais se atualizam automaticamente para o mesmo estado físico. Ao lado de cada controle há um <em>mostrador analógico</em> com ponteiro (arco de 240°).</p>
     <p><small>Desenvolvido por <strong>Mario Reis</strong> – Instituto de Física, Universidade Federal Fluminense (UFF) · <a href="mailto:marioreis@id.uff.br">marioreis@id.uff.br</a> · <a href="https://profmarioreis.wordpress.com" target="_blank" rel="noopener">profmarioreis.wordpress.com</a><br/>Versão 1.0 – 26 de julho de 2025</small></p>
   </div>
 
-  <main class="app">
-    <section class="control">
-      <div class="row" style="margin-bottom:10px">
-        <label for="cRange">Temperatura (°C):</label>
-        <div class="val" id="cLabel">25.00 °C</div>
+  <main class="app" aria-live="polite">
+    <!-- Celsius row -->
+    <section class="row" id="rowC">
+      <div class="label">Celsius (°C)</div>
+      <div class="slider-wrap">
+        <input id="sliderC" type="range" min="-20" max="120" step="0.1" value="25" aria-label="Celsius" />
+        <div>
+          <span class="val" id="valC">25.0 °C</span>
+          <span class="hint">Intervalo: −20 a 120 °C</span>
+        </div>
       </div>
-      <input id="cRange" type="range" min="-20" max="120" step="0.1" value="25" aria-label="Controle de temperatura em Celsius"/>
-      <div class="scale-legend" aria-hidden="true">
-        <span>−20 °C (azul)</span>
-        <span>120 °C (vermelho)</span>
+      <div class="gauge">
+        <svg viewBox="0 0 100 100" id="gaugeC" aria-hidden="true">
+          <!-- arco de fundo -->
+          <path d="M15,65 A40,40 0 1 1 85,65" fill="none" stroke="#334155" stroke-width="10" stroke-linecap="round"/>
+          <!-- arco de gradiente -->
+          <defs>
+            <linearGradient id="gradC" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="var(--blue)"/>
+              <stop offset="100%" stop-color="var(--red)"/>
+            </linearGradient>
+          </defs>
+          <path d="M15,65 A40,40 0 1 1 85,65" fill="none" stroke="url(#gradC)" stroke-width="6"/>
+          <!-- ponteiro -->
+          <g id="needleC" transform="rotate(0 50 65)">
+            <line x1="50" y1="65" x2="50" y2="25" stroke="#e5e7eb" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="50" cy="65" r="4" fill="#e5e7eb"/>
+          </g>
+        </svg>
+        <div class="center-text" id="centerC">25.0 °C</div>
+        <div class="unit">−20 °C ⟶ 120 °C</div>
       </div>
     </section>
 
-    <section class="grid" aria-live="polite">
-      <!-- Celsius -->
-      <article class="card" id="cardC">
-        <div class="title">Celsius (°C)</div>
-        <div class="thermo-wrap">
-          <div class="thermo" aria-hidden="true">
-            <div class="mercury" id="fillC"></div>
-          </div>
+    <!-- Fahrenheit row -->
+    <section class="row" id="rowF">
+      <div class="label">Fahrenheit (°F)</div>
+      <div class="slider-wrap">
+        <input id="sliderF" type="range" min="-4" max="248" step="0.1" value="77" aria-label="Fahrenheit" />
+        <div>
+          <span class="val" id="valF">77.0 °F</span>
+          <span class="hint">Equivalente: −4 a 248 °F</span>
         </div>
-        <div class="readout">
-          <div class="digital" id="valC">25.00 °C</div>
-          <div class="unit hint" id="rngC">Escala exibida: −20.00 °C a 120.00 °C</div>
-        </div>
-      </article>
-
-      <!-- Fahrenheit -->
-      <article class="card" id="cardF">
-        <div class="title">Fahrenheit (°F)</div>
-        <div class="thermo-wrap">
-          <div class="thermo" aria-hidden="true">
-            <div class="mercury" id="fillF"></div>
-          </div>
-        </div>
-        <div class="readout">
-          <div class="digital" id="valF">77.00 °F</div>
-          <div class="unit hint" id="rngF">Escala exibida: −4.00 °F a 248.00 °F</div>
-        </div>
-      </article>
-
-      <!-- Kelvin -->
-      <article class="card" id="cardK">
-        <div class="title">Kelvin (K)</div>
-        <div class="thermo-wrap">
-          <div class="thermo" aria-hidden="true">
-            <div class="mercury" id="fillK"></div>
-          </div>
-        </div>
-        <div class="readout">
-          <div class="digital" id="valK">298.15 K</div>
-          <div class="unit hint" id="rngK">Escala exibida: 253.15 K a 393.15 K</div>
-        </div>
-      </article>
+      </div>
+      <div class="gauge">
+        <svg viewBox="0 0 100 100" id="gaugeF" aria-hidden="true">
+          <path d="M15,65 A40,40 0 1 1 85,65" fill="none" stroke="#334155" stroke-width="10" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="gradF" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="var(--blue)"/>
+              <stop offset="100%" stop-color="var(--red)"/>
+            </linearGradient>
+          </defs>
+          <path d="M15,65 A40,40 0 1 1 85,65" fill="none" stroke="url(#gradF)" stroke-width="6"/>
+          <g id="needleF" transform="rotate(0 50 65)">
+            <line x1="50" y1="65" x2="50" y2="25" stroke="#e5e7eb" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="50" cy="65" r="4" fill="#e5e7eb"/>
+          </g>
+        </svg>
+        <div class="center-text" id="centerF">77.0 °F</div>
+        <div class="unit">−4 °F ⟶ 248 °F</div>
+      </div>
     </section>
 
-    <p class="footer-note">A coluna colorida representa a fração dentro do intervalo mostrado abaixo de cada escala (mapeado de −20 °C a 120 °C como referência).</p>
+    <!-- Kelvin row -->
+    <section class="row" id="rowK">
+      <div class="label">Kelvin (K)</div>
+      <div class="slider-wrap">
+        <input id="sliderK" type="range" min="253.15" max="393.15" step="0.01" value="298.15" aria-label="Kelvin" />
+        <div>
+          <span class="val" id="valK">298.15 K</span>
+          <span class="hint">Equivalente: 253.15 a 393.15 K</span>
+        </div>
+      </div>
+      <div class="gauge">
+        <svg viewBox="0 0 100 100" id="gaugeK" aria-hidden="true">
+          <path d="M15,65 A40,40 0 1 1 85,65" fill="none" stroke="#334155" stroke-width="10" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="gradK" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="var(--blue)"/>
+              <stop offset="100%" stop-color="var(--red)"/>
+            </linearGradient>
+          </defs>
+          <path d="M15,65 A40,40 0 1 1 85,65" fill="none" stroke="url(#gradK)" stroke-width="6"/>
+          <g id="needleK" transform="rotate(0 50 65)">
+            <line x1="50" y1="65" x2="50" y2="25" stroke="#e5e7eb" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="50" cy="65" r="4" fill="#e5e7eb"/>
+          </g>
+        </svg>
+        <div class="center-text" id="centerK">298.15 K</div>
+        <div class="unit">253.15 K ⟶ 393.15 K</div>
+      </div>
+    </section>
   </main>
 
   <script>
-    const range = document.getElementById('cRange');
-    const cLabel = document.getElementById('cLabel');
+    // Conversões básicas
+    const c2f = C => C * 9/5 + 32;
+    const f2c = F => (F - 32) * 5/9;
+    const c2k = C => C + 273.15;
+    const k2c = K => K - 273.15;
 
-    const valC = document.getElementById('valC');
-    const valF = document.getElementById('valF');
-    const valK = document.getElementById('valK');
-
-    const fillC = document.getElementById('fillC');
-    const fillF = document.getElementById('fillF');
-    const fillK = document.getElementById('fillK');
-
-    // Intervalos equivalentes a −20 a 120 °C em cada escala
-    const MIN_MAX = {
-      C: { min: -20, max: 120 },
-      F: { min: -4, max: 248 },
-      K: { min: 253.15, max: 393.15 }
+    // Limites (equivalentes a −20 a 120 °C)
+    const LIM = {
+      C:{min:-20, max:120},
+      F:{min:-4, max:248},
+      K:{min:253.15, max:393.15}
     };
 
-    function cToK(C){ return C + 273.15 }
-    function cToF(C){ return (C * 9/5) + 32 }
+    // Elementos
+    const sC = document.getElementById('sliderC');
+    const sF = document.getElementById('sliderF');
+    const sK = document.getElementById('sliderK');
 
-    function clamp01(x){ return Math.max(0, Math.min(1, x)) }
-    function pct(val, {min, max}){ return clamp01((val - min) / (max - min)) }
+    const vC = document.getElementById('valC');
+    const vF = document.getElementById('valF');
+    const vK = document.getElementById('valK');
 
-    function fmt(n, unit){
-      const v = Math.abs(n) < 1e-9 ? 0 : n; // evita −0.00
-      return `${v.toFixed(2)} ${unit}`
+    const centerC = document.getElementById('centerC');
+    const centerF = document.getElementById('centerF');
+    const centerK = document.getElementById('centerK');
+
+    const needleC = document.getElementById('needleC');
+    const needleF = document.getElementById('needleF');
+    const needleK = document.getElementById('needleK');
+
+    // Mapeia valor para ângulo do ponteiro (arco de 240°, -120° a +120°)
+    function angle(val, min, max){
+      const t = Math.max(0, Math.min(1, (val - min)/(max - min)));
+      return -120 + 240*t;
     }
 
-    function update(){
-      const C = parseFloat(range.value);
-      const F = cToF(C);
-      const K = cToK(C);
-
-      // Atualiza rótulos
-      cLabel.textContent = fmt(C, '°C');
-      valC.textContent   = fmt(C, '°C');
-      valF.textContent   = fmt(F, '°F');
-      valK.textContent   = fmt(K, 'K');
-
-      // Altura do “mercúrio” conforme o intervalo exibido
-      fillC.style.height = (pct(C, MIN_MAX.C) * 100).toFixed(2) + '%';
-      fillF.style.height = (pct(F, MIN_MAX.F) * 100).toFixed(2) + '%';
-      fillK.style.height = (pct(K, MIN_MAX.K) * 100).toFixed(2) + '%';
+    function fmt(n, unit, digits=1){
+      const v = Math.abs(n) < 1e-9 ? 0 : n;
+      return `${v.toFixed(digits)} ${unit}`;
     }
 
-    // Inicializa os textos de intervalos (caso precise ser dinâmico no futuro)
-    document.getElementById('rngC').textContent = `Escala exibida: ${MIN_MAX.C.min.toFixed(2)} °C a ${MIN_MAX.C.max.toFixed(2)} °C`;
-    document.getElementById('rngF').textContent = `Escala exibida: ${MIN_MAX.F.min.toFixed(2)} °F a ${MIN_MAX.F.max.toFixed(2)} °F`;
-    document.getElementById('rngK').textContent = `Escala exibida: ${MIN_MAX.K.min.toFixed(2)} K a ${MIN_MAX.K.max.toFixed(2)} K`;
+    function updateFromC(C){
+      // Restringe ao intervalo
+      const c = Math.min(LIM.C.max, Math.max(LIM.C.min, C));
+      const f = c2f(c);
+      const k = c2k(c);
 
-    range.addEventListener('input', update);
-    update();
+      // Sliders
+      sC.value = c.toFixed(1);
+      sF.value = f.toFixed(1);
+      sK.value = k.toFixed(2);
+
+      // Caixas
+      vC.textContent = fmt(c, '°C');
+      vF.textContent = fmt(f, '°F');
+      vK.textContent = fmt(k, 'K', 2);
+
+      // Centro dos mostradores
+      centerC.textContent = fmt(c, '°C');
+      centerF.textContent = fmt(f, '°F');
+      centerK.textContent = fmt(k, 'K', 2);
+
+      // Ponteiros
+      needleC.setAttribute('transform', `rotate(${angle(c, LIM.C.min, LIM.C.max)} 50 65)`);
+      needleF.setAttribute('transform', `rotate(${angle(f, LIM.F.min, LIM.F.max)} 50 65)`);
+      needleK.setAttribute('transform', `rotate(${angle(k, LIM.K.min, LIM.K.max)} 50 65)`);
+    }
+
+    // Listeners (mantêm sincronizados)
+    sC.addEventListener('input', ()=> updateFromC(parseFloat(sC.value)) );
+    sF.addEventListener('input', ()=> updateFromC(f2c(parseFloat(sF.value))) );
+    sK.addEventListener('input', ()=> updateFromC(k2c(parseFloat(sK.value))) );
+
+    // Inicializa
+    updateFromC(parseFloat(sC.value));
   </script>
 </body>
 </html>
