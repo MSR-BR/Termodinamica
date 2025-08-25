@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quadrado dos Potenciais Termodinâmicos</title>
+<style>
+  :root{
+    --bg:#0f172a;            /* slate-900 */
+    --panel:#111827;         /* gray-900 */
+    --card:#0b1222;          /* deep */
+    --ink:#e5e7eb;           /* gray-200 */
+    --muted:#9ca3af;         /* gray-400 */
+    --accent:#60a5fa;        /* blue-400 */
+    --accent2:#34d399;       /* emerald-400 */
+    --accent3:#f472b6;       /* pink-400 */
+    --edge:#334155;          /* slate-700 */
+    --node:#1f2937;          /* gray-800 */
+    --nodeHover:#374151;     /* gray-700 */
+    --shadow: 0 10px 30px rgba(0,0,0,.35);
+    --radius: 18px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background: radial-gradient(1200px 800px at 70% 10%, #0b1222 0%, var(--bg) 55%, #060a14 100%);
+    color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    line-height:1.45;
+  }
+  header{
+    max-width:1100px; margin:24px auto 12px; padding:0 16px;
+  }
+  h1{ font-size:clamp(22px, 2.6vw, 30px); margin:0 0 6px; letter-spacing:.2px}
+  .sub{ color:var(--muted); font-size:14px }
+  .wrap{
+    max-width:1100px; margin:0 auto; padding:12px 16px 32px;
+    display:grid; grid-template-columns: 1.1fr .9fr; gap:18px;
+  }
+  @media (max-width: 980px){
+    .wrap{ grid-template-columns:1fr; }
+  }
+
+  /* Canvas */
+  .board{
+    background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.0));
+    border:1px solid #1f2937;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    position:relative;
+    padding:20px;
+    min-height: 560px;
+  }
+
+  /* Grid area for the square */
+  .grid{
+    position:relative;
+    margin:auto;
+    width:min(720px, 100%);
+    aspect-ratio: 1.35 / 1;  /* retângulo suave */
+  }
+
+  /* Edges (linhas) */
+  .edge{
+    position:absolute;
+    background: linear-gradient(90deg, transparent, var(--edge), transparent);
+    pointer-events:none;
+    filter: drop-shadow(0 1px 0 rgba(0,0,0,.35));
+  }
+  .edge.h{ height:2px; }
+  .edge.v{ width:2px; background: linear-gradient(180deg, transparent, var(--edge), transparent); }
+
+  /* Nodes (potenciais e variáveis) */
+  .node{
+    position:absolute; display:flex; align-items:center; justify-content:center;
+    padding:10px 14px; border-radius:14px; cursor:pointer;
+    background: linear-gradient(180deg, var(--node), #0f1a2d);
+    border:1px solid #1f2a40;
+    box-shadow: 0 2px 0 rgba(255,255,255,.03) inset, var(--shadow);
+    transition: transform .08s ease, background .2s ease, border-color .2s ease;
+    user-select:none;
+  }
+  .node:hover{ transform: translateY(-1px); background: var(--nodeHover); border-color:#2b3e5c; }
+  .node:active{ transform: translateY(0); }
+
+  .node.pot{ font-weight:700; font-size:20px; }
+  .node.var{ font-weight:600; font-size:18px; }
+
+  /* Color accents */
+  .U{ outline:2px solid rgba(96,165,250,.35) }
+  .F{ outline:2px solid rgba(244,114,182,.35) }
+  .H{ outline:2px solid rgba(52,211,153,.35) }
+  .G{ outline:2px solid rgba(250,204,21,.35) }
+
+  .chip{
+    position:absolute; color:var(--muted); font-size:12px; opacity:.9;
+    background: rgba(15,23,42,.6); border:1px solid #1f2937;
+    padding:4px 8px; border-radius:999px;
+  }
+
+  /* Info panel */
+  .panel{
+    background: linear-gradient(180deg, var(--panel), #0d1424);
+    border:1px solid #1f2937; border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding:18px 18px 14px;
+  }
+  .panel h2{ margin:.2rem 0 .6rem; font-size:20px }
+  .panel .muted{ color:var(--muted); font-size:13px; margin-bottom:.8rem }
+  .panel .block{ background: #0a1222; border:1px solid #182338; border-radius:12px; padding:12px 14px; margin:.5rem 0 }
+  .panel code, .panel kbd, .panel .math{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  .panel .math{ display:block; white-space:nowrap; overflow:auto; }
+  .badges{ display:flex; flex-wrap:wrap; gap:8px; margin:.2rem 0 .6rem; }
+  .badge{
+    font-size:12px; color:#d1d5db; background:#111827; border:1px solid #1f2937;
+    padding:5px 8px; border-radius:999px;
+  }
+  .small{ font-size:12px; color:var(--muted) }
+  .hint{ font-size:12px; color:#9dd1ff; margin-top:.4rem }
+
+  /* Positions (responsive via percentages) */
+  /* Corners: U (TL), H (TR), F (BL), G (BR) */
+  .U.node{ left:4%; top:6%; }
+  .H.node{ right:4%; top:6%; }
+  .F.node{ left:4%; bottom:6%; }
+  .G.node{ right:4%; bottom:6%; }
+
+  /* Variables at mid-sides: V (top), P (right), S (left), T (bottom) */
+  .V.node{ left:50%; transform:translate(-50%,0); top:1.5%; }
+  .P.node{ right:1.5%; top:50%; transform:translate(0,-50%); }
+  .S.node{ left:1.5%; top:50%; transform:translate(0,-50%); }
+  .T.node{ left:50%; transform:translate(-50%,0); bottom:1.5%; }
+
+  /* Edges positions */
+  .edge.top{ left:16%; right:16%; top:11.5%; }
+  .edge.bottom{ left:16%; right:16%; bottom:11.5%; }
+  .edge.left{ top:18%; bottom:18%; left:11.5%; }
+  .edge.right{ top:18%; bottom:18%; right:11.5%; }
+
+  /* Legend chips near edges */
+  .chip.top{ top:7%; left:50%; transform:translate(-50%,0) }
+  .chip.bottom{ bottom:7%; left:50%; transform:translate(-50%,0) }
+  .chip.left{ left:7%; top:50%; transform:translate(0,-50%) rotate(-90deg) }
+  .chip.right{ right:7%; top:50%; transform:translate(0,-50%) rotate(90deg) }
+
+  footer{
+    max-width:1100px; margin: 6px auto 26px; padding:0 16px;
+    color:var(--muted); font-size:12px
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Quadrado dos Potenciais Termodinâmicos</h1>
+    <div class="sub">Clique em <b>U, F, H, G</b> ou em <b>S, T, V, P</b> para ver relações e identidades. (Convenções padrão.)</div>
+  </header>
+
+  <div class="wrap">
+    <!-- Canvas -->
+    <section class="board">
+      <div class="grid" id="grid">
+        <!-- Edges -->
+        <div class="edge h top"></div>
+        <div class="edge h bottom"></div>
+        <div class="edge v left"></div>
+        <div class="edge v right"></div>
+
+        <!-- Edge labels -->
+        <div class="chip top">V ↔ P</div>
+        <div class="chip bottom">V ↔ P</div>
+        <div class="chip left">S ↔ T</div>
+        <div class="chip right">S ↔ T</div>
+
+        <!-- Potentials -->
+        <div class="node pot U" data-type="pot" data-id="U" title="Energia Interna U(S,V)">U</div>
+        <div class="node pot H" data-type="pot" data-id="H" title="Entalpia H(S,P)">H</div>
+        <div class="node pot F" data-type="pot" data-id="F" title="Energia Livre de Helmholtz F(T,V)">F</div>
+        <div class="node pot G" data-type="pot" data-id="G" title="Energia Livre de Gibbs G(T,P)">G</div>
+
+        <!-- Variables -->
+        <div class="node var V" data-type="var" data-id="V" title="Volume V">V</div>
+        <div class="node var P" data-type="var" data-id="P" title="Pressão P">P</div>
+        <div class="node var S" data-type="var" data-id="S" title="Entropia S">S</div>
+        <div class="node var T" data-type="var" data-id="T" title="Temperatura T">T</div>
+      </div>
+    </section>
+
+    <!-- Info panel -->
+    <aside class="panel" id="panel">
+      <h2>Bem-vindo</h2>
+      <div class="muted">Selecione um <b>potencial</b> (U, F, H, G) para ver suas relações diferenciais, variáveis naturais, derivadas conjugadas e relações de Maxwell.  
+      Selecione uma <b>variável</b> (S, T, V, P) para ver os potenciais relacionados a ela.</div>
+
+      <div class="block">
+        <div class="badges">
+          <span class="badge">dU = T dS − P dV</span>
+          <span class="badge">dF = −S dT − P dV</span>
+          <span class="badge">dH = T dS + V dP</span>
+          <span class="badge">dG = −S dT + V dP</span>
+        </div>
+        <div class="small">Critério (ex.: T,P ctes, N fixo): espontâneo ⇢ <b>dG &lt; 0</b>, equilíbrio ⇢ <b>dG = 0</b>.</div>
+      </div>
+
+      <div class="hint">Dica: passe o mouse pelos nós para ver uma breve descrição.</div>
+    </aside>
+  </div>
+
+  <footer>
+    © 2025 · Visual interativo para ensino: potenciais termodinâmicos, variáveis naturais e relações de Maxwell.
+  </footer>
+
+<script>
+/* ======== Modelo de dados ======== */
+
+/* Potenciais com variáveis naturais, diferencial, derivadas e Maxwell */
+const POTENCIAIS = {
+  U: {
+    titulo: "Energia Interna U(S,V)",
+    naturais: ["S","V"],
+    diferencial: "dU = T dS − P dV",
+    derivadas: [
+      "T = (∂U/∂S)<sub>V</sub>",
+      "−P = (∂U/∂V)<sub>S</sub>"
+    ],
+    maxwell: [
+      "(∂T/∂V)<sub>S</sub> = −(∂P/∂S)<sub>V</sub>"
+    ],
+    legendre: [
+      "F = U − T S  (troca S→T)",
+      "H = U + P V  (troca V→P)",
+      "G = U − T S + P V  (troca S→T e V→P)"
+    ]
+  },
+  F: {
+    titulo: "Energia Livre de Helmholtz F(T,V)",
+    naturais: ["T","V"],
+    diferencial: "dF = −S dT − P dV",
+    derivadas: [
+      "−S = (∂F/∂T)<sub>V</sub>",
+      "−P = (∂F/∂V)<sub>T</sub>"
+    ],
+    maxwell: [
+      "(∂S/∂V)<sub>T</sub> = (∂P/∂T)<sub>V</sub>"
+    ],
+    legendre: [
+      "F = U − T S (de U trocando S→T)",
+      "G = F + P V",
+      "H = F + T S + P V (≡ U + P V)"
+    ]
+  },
+  H: {
+    titulo: "Entalpia H(S,P)",
+    naturais: ["S","P"],
+    diferencial: "dH = T dS + V dP",
+    derivadas: [
+      "T = (∂H/∂S)<sub>P</sub>",
+      "V = (∂H/∂P)<sub>S</sub>"
+    ],
+    maxwell: [
+      "(∂T/∂P)<sub>S</sub> = (∂V/∂S)<sub>P</sub>"
+    ],
+    legendre: [
+      "H = U + P V (de U trocando V→P)",
+      "G = H − T S",
+      "F = H − P V − T S (≡ U − T S)"
+    ]
+  },
+  G: {
+    titulo: "Energia Livre de Gibbs G(T,P)",
+    naturais: ["T","P"],
+    diferencial: "dG = −S dT + V dP",
+    derivadas: [
+      "−S = (∂G/∂T)<sub>P</sub>",
+      "V = (∂G/∂P)<sub>T</sub>"
+    ],
+    maxwell: [
+      "(∂S/∂P)<sub>T</sub> = −(∂V/∂T)<sub>P</sub>"
+    ],
+    legendre: [
+      "G = U − T S + P V",
+      "F = G − P V",
+      "H = G + T S − P V"
+    ]
+  }
+};
+
+/* Variáveis → potenciais onde são variáveis naturais */
+const VARIAVEIS = {
+  S: { titulo: "Entropia S", relacionados: ["U","H"], conjugado: "T (conjugado de S)" },
+  T: { titulo: "Temperatura T", relacionados: ["F","G"], conjugado: "S (conjugado de T)" },
+  V: { titulo: "Volume V", relacionados: ["U","F"], conjugado: "P (conjugado de V)" },
+  P: { titulo: "Pressão P", relacionados: ["H","G"], conjugado: "V (conjugado de P)" }
+};
+
+/* ======== Renderização ======== */
+const panel = document.getElementById("panel");
+
+function mathLine(s){ return `<div class="math">${s}</div>`; }
+
+function renderPotencial(id){
+  const p = POTENCIAIS[id];
+  const cores = { U:"#60a5fa", F:"#f472b6", H:"#34d399", G:"#facc15" };
+  const cor = cores[id] || "#60a5fa";
+
+  panel.innerHTML = `
+    <h2 style="display:flex;align-items:center;gap:10px">
+      <span style="display:inline-flex;width:10px;height:10px;border-radius:999px;background:${cor}"></span>
+      ${p.titulo}
+    </h2>
+    <div class="muted">Variáveis naturais: <b>${p.naturais.join(", ")}</b>. Clique nas variáveis no diagrama para navegar.</div>
+
+    <div class="block">
+      <div class="small">Diferencial total</div>
+      ${mathLine(p.diferencial)}
+    </div>
+
+    <div class="block">
+      <div class="small">Derivadas conjugadas</div>
+      ${p.derivadas.map(mathLine).join("")}
+    </div>
+
+    <div class="block">
+      <div class="small">Relação(ões) de Maxwell associada(s)</div>
+      ${p.maxwell.map(mathLine).join("")}
+    </div>
+
+    <div class="block">
+      <div class="small">Transformações de Legendre relacionadas</div>
+      <ul style="margin:.4rem 0 .2rem .9rem">
+        ${p.legendre.map(s=>`<li>${s}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+function renderVariavel(id){
+  const v = VARIAVEIS[id];
+  const nomes = { U:"U(S,V)", F:"F(T,V)", H:"H(S,P)", G:"G(T,P)" };
+  panel.innerHTML = `
+    <h2>${v.titulo}</h2>
+    <div class="muted">Potenciais em que <b>${id}</b> é variável natural:</div>
+    <div class="badges">
+      ${v.relacionados.map(pid=>`<span class="badge">${pid} — ${nomes[pid]}</span>`).join("")}
+    </div>
+    <div class="block">
+      <div class="small">Par conjugado</div>
+      <div>${v.conjugado}</div>
+    </div>
+    <div class="block">
+      <div class="small">Clique em um potencial abaixo para ver as relações completas</div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px">
+        ${v.relacionados.map(pid=>`
+          <button data-jump="${pid}" style="
+            background:#0b1222;border:1px solid #1f2937;color:#e5e7eb;
+            padding:8px 10px;border-radius:10px;cursor:pointer">
+            Abrir ${pid}
+          </button>`).join("")}
+      </div>
+    </div>
+  `;
+  // wire buttons
+  panel.querySelectorAll("[data-jump]").forEach(btn=>{
+    btn.addEventListener("click", e => renderPotencial(e.currentTarget.dataset.jump));
+  });
+}
+
+/* ======== Eventos ======== */
+document.querySelectorAll(".node").forEach(el=>{
+  el.addEventListener("click", () => {
+    const type = el.dataset.type;
+    const id = el.dataset.id;
+    if(type === "pot") renderPotencial(id);
+    else renderVariavel(id);
+  });
+});
+
+// Estado inicial: mostra G (útil para critério de espontaneidade em T,P ctes)
+renderPotencial("G");
+</script>
+</body>
+</html>
