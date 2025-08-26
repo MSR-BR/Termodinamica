@@ -18,39 +18,44 @@
     line-height:1.45;
   }
 
-  header{ max-width:1100px; margin:24px auto 0; padding:0 16px 8px; text-align:center }
-  .title{ font-weight:800; letter-spacing:.2px; font-size:clamp(28px, 4.6vw, 44px); margin:8px 0 4px; }
-  .subtitle{ color:#cbd5e1; font-size:14px; margin-bottom:14px }
-
-  .info{ max-width:1100px; margin:0 auto 10px; padding:0 16px; }
+  /* Header no estilo da imagem */
+  header{ max-width:1100px; margin:24px auto 0; padding:0 16px 8px; }
+  .title{ font-weight:800; text-align:center; letter-spacing:.2px;
+          font-size: clamp(28px, 4.6vw, 44px); margin:8px 0 4px; }
+  .subtitle{ text-align:center; color:#cbd5e1; font-size:14px; margin-bottom:14px }
+  .info{
+    max-width:1100px; margin:0 auto 10px; padding:0 16px;
+  }
   .info-card{
     background: linear-gradient(180deg, #0f172a, #0b1222);
     border:1px solid #1f2937; border-radius:18px; box-shadow: var(--shadow);
-    padding:14px 16px;
+    padding:14px 16px 14px;
   }
   .info-card b{ font-weight:800 }
   .info-card a{ color:#9dd1ff; text-decoration:none }
   .info-card a:hover{ text-decoration:underline }
 
-  .wrap{ max-width:1100px; margin:0 auto; padding:12px 16px 26px;
-         display:grid; grid-template-columns:1.1fr .9fr; gap:18px; }
+  .wrap{
+    max-width:1100px; margin:0 auto; padding:12px 16px 26px;
+    display:grid; grid-template-columns: 1.1fr .9fr; gap:18px;
+  }
   @media (max-width: 980px){ .wrap{ grid-template-columns:1fr; } }
 
   .board{
     background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.0));
     border:1px solid #1f2937; border-radius: var(--radius); box-shadow: var(--shadow);
-    position:relative; padding:20px;
-    /* Altura ajustada para envolver o retângulo de forma justa */
-    min-height:460px;
+    position:relative; padding:20px; min-height:560px;
   }
 
   .grid{ position:relative; margin:auto; width:min(720px, 100%); aspect-ratio: 1.35 / 1; }
 
+  /* Linhas do quadrado */
   .edge{ position:absolute; background: linear-gradient(90deg, transparent, var(--edge), transparent);
          pointer-events:none; filter: drop-shadow(0 1px 0 rgba(0,0,0,.35)); }
   .edge.h{ height:2px; }
   .edge.v{ width:2px; background: linear-gradient(180deg, transparent, var(--edge), transparent); }
 
+  /* Nós */
   .node{
     position:absolute; display:flex; align-items:center; justify-content:center;
     padding:10px 14px; border-radius:14px; cursor:pointer;
@@ -69,9 +74,12 @@
   .H{ outline:2px solid rgba(52,211,153,.35) }
   .G{ outline:2px solid rgba(250,204,21,.35) }
 
-  .panel{ background: linear-gradient(180deg, var(--panel), #0d1424);
-          border:1px solid #1f2937; border-radius: var(--radius); box-shadow: var(--shadow);
-          padding:18px 18px 14px; }
+  /* Painel */
+  .panel{
+    background: linear-gradient(180deg, var(--panel), #0d1424);
+    border:1px solid #1f2937; border-radius: var(--radius); box-shadow: var(--shadow);
+    padding:18px 18px 14px;
+  }
   .panel h2{ margin:.2rem 0 .6rem; font-size:20px }
   .panel .muted{ color:var(--muted); font-size:13px; margin-bottom:.8rem }
   .panel .block{ background:#0a1222; border:1px solid #182338; border-radius:12px; padding:12px 14px; margin:.5rem 0 }
@@ -79,6 +87,7 @@
   .badges{ display:flex; flex-wrap:wrap; gap:8px; margin:.2rem 0 .6rem; }
   .badge{ font-size:12px; color:#d1d5db; background:#111827; border:1px solid #1f2937; padding:5px 8px; border-radius:999px; }
   .small{ font-size:12px; color:var(--muted) }
+  .hint{ font-size:12px; color:#9dd1ff; margin-top:.4rem }
 
   /* Posições */
   .U.node{ left:4%; top:6%; }
@@ -95,50 +104,52 @@
   .edge.bottom{ left:16%; right:16%; bottom:11.5%; }
   .edge.left{ top:18%; bottom:18%; left:11.5%; }
   .edge.right{ top:18%; bottom:18%; right:11.5%; }
-
-  /* Barra de compartilhamento */
-  .share-bar{ margin-top:12px; display:flex; gap:10px; }
-  .share-bar a{ color:#9dd1ff; font-size:18px; text-decoration:none; }
-  .share-bar a:hover{ color:white; }
-
-  /* Contador */
-  .counter{ position:fixed; bottom:8px; right:12px; font-size:11px; color:#64748b; }
 </style>
 </head>
 <body>
 
+  <!-- Cabeçalho estilo imagem -->
   <header>
     <div class="title">Quadrado dos Potenciais Termodinâmicos</div>
-    <div class="subtitle">Clique em U, F, H, G ou S, T, V, P para visualizar diferenciais, Legendre e Maxwell.</div>
+    <div class="subtitle">Fornece as Relações Termodinâmicas e Relações de Maxwell para Energia Interna, Energia Livre e Entalpia em função das variáveis termodiâmicas, como Temperatura, Pressão, Volume.</div>
   </header>
   <div class="info">
     <div class="info-card">
-      <p><b>Como usar:</b> Clique em um potencial (<b>U, F, H, G</b>) ou em uma variável (<b>S, T, V, P</b>); as relações correspondentes aparecem no painel ao lado.</p>
-      <p>Desenvolvido por <b>Mario Reis – Instituto de Física, Universidade Federal Fluminense (UFF)</b></p>
+      <p><b>Como usar:</b> Clique em um potencial (<b>U, F, H, G</b>) ou em uma variável (<b>S, T, V, P</b>). Abaixo aparecem as relações correspondentes.</p>
+      <p>Desenvolvido por <b>Mario Reis – Instituto de Física, Universidade Federal Fluminense (UFF)</b> · <a href="mailto:marioreis@id.uff.br">marioreis@id.uff.br</a> · <a href="https://profmarioreis.wordpress.com" target="_blank" rel="noopener">profmarioreis.wordpress.com</a></p>
+      <p>Versão 1.0 – 26 de julho de 2025</p>
     </div>
   </div>
 
   <div class="wrap">
+    <!-- Diagrama -->
     <section class="board">
       <div class="grid" id="grid">
+        <!-- Linhas -->
         <div class="edge h top"></div>
         <div class="edge h bottom"></div>
         <div class="edge v left"></div>
         <div class="edge v right"></div>
-        <div class="node pot U" data-type="pot" data-id="U">U</div>
-        <div class="node pot H" data-type="pot" data-id="H">H</div>
-        <div class="node pot F" data-type="pot" data-id="F">F</div>
-        <div class="node pot G" data-type="pot" data-id="G">G</div>
-        <div class="node var V" data-type="var" data-id="V">V</div>
-        <div class="node var P" data-type="var" data-id="P">P</div>
-        <div class="node var S" data-type="var" data-id="S">S</div>
-        <div class="node var T" data-type="var" data-id="T">T</div>
+
+        <!-- Potenciais -->
+        <div class="node pot U" data-type="pot" data-id="U" title="Energia Interna U(S,V)">U</div>
+        <div class="node pot H" data-type="pot" data-id="H" title="Entalpia H(S,P)">H</div>
+        <div class="node pot F" data-type="pot" data-id="F" title="Helmholtz F(T,V)">F</div>
+        <div class="node pot G" data-type="pot" data-id="G" title="Gibbs G(T,P)">G</div>
+
+        <!-- Variáveis -->
+        <div class="node var V" data-type="var" data-id="V" title="Volume V">V</div>
+        <div class="node var P" data-type="var" data-id="P" title="Pressão P">P</div>
+        <div class="node var S" data-type="var" data-id="S" title="Entropia S">S</div>
+        <div class="node var T" data-type="var" data-id="T" title="Temperatura T">T</div>
       </div>
     </section>
 
+    <!-- Painel -->
     <aside class="panel" id="panel">
       <h2>Bem-vindo</h2>
-      <div class="muted">Clique em U, F, H, G ou S, T, V, P.</div>
+      <div class="muted">Clique em <b>U, F, H, G</b> para ver diferenciais, variáveis naturais, derivadas e relações de Maxwell; clique em <b>S, T, V, P</b> para ver os potenciais associados.</div>
+
       <div class="block">
         <div class="badges">
           <span class="badge">dU = T dS − P dV</span>
@@ -146,27 +157,197 @@
           <span class="badge">dH = T dS + V dP</span>
           <span class="badge">dG = −S dT + V dP</span>
         </div>
+        <div class="small">Em T,P constantes (N fixo): espontâneo ⇢ <b>dG &lt; 0</b>; equilíbrio ⇢ <b>dG = 0</b>.</div>
       </div>
-      <div class="share-bar">
-        <a href="https://twitter.com/intent/tweet?url=https://exemplo.com" target="_blank">🐦</a>
-        <a href="https://www.facebook.com/sharer/sharer.php?u=https://exemplo.com" target="_blank">📘</a>
-        <a href="https://www.linkedin.com/shareArticle?mini=true&url=https://exemplo.com" target="_blank">💼</a>
-        <a href="https://api.whatsapp.com/send?text=https://exemplo.com" target="_blank">💬</a>
-      </div>
+
+      <div class="hint">Dica: passe o mouse pelos nós para ver uma breve descrição.</div>
     </aside>
   </div>
 
-  <!-- contador -->
-  <div class="counter" id="counter"></div>
-
 <script>
-// Contador de visitas local
-let count = localStorage.getItem("visits") || 0;
-count++;
-localStorage.setItem("visits", count);
-document.getElementById("counter").textContent = "Visitas: " + count;
+/* ======== Modelo ======== */
+const POTENCIAIS = {
+  U: {
+    titulo: "Energia Interna U(S,V)",
+    naturais: ["S","V"],
+    diferencial: "dU = T dS − P dV",
+    derivadas: [
+      "T = (∂U/∂S)<sub>V</sub>",
+      "−P = (∂U/∂V)<sub>S</sub>"
+    ],
+    maxwell: [
+      "(∂T/∂V)<sub>S</sub> = −(∂P/∂S)<sub>V</sub>"
+    ],
+    legendre: [
+      "F = U − T S",
+      "H = U + P V",
+      "G = U − T S + P V"
+    ]
+  },
+  F: {
+    titulo: "Energia Livre de Helmholtz F(T,V)",
+    naturais: ["T","V"],
+    diferencial: "dF = −S dT − P dV",
+    derivadas: [
+      "−S = (∂F/∂T)<sub>V</sub>",
+      "−P = (∂F/∂V)<sub>T</sub>"
+    ],
+    maxwell: [
+      "(∂S/∂V)<sub>T</sub> = (∂P/∂T)<sub>V</sub>"
+    ],
+    legendre: [
+      "F = U − T S",
+      "G = F + P V",
+      "H = F + T S + P V"
+    ]
+  },
+  H: {
+    titulo: "Entalpia H(S,P)",
+    naturais: ["S","P"],
+    diferencial: "dH = T dS + V dP",
+    derivadas: [
+      "T = (∂H/∂S)<sub>P</sub>",
+      "V = (∂H/∂P)<sub>S</sub>"
+    ],
+    maxwell: [
+      "(∂T/∂P)<sub>S</sub> = (∂V/∂S)<sub>P</sub>"
+    ],
+    legendre: [
+      "H = U + P V",
+      "G = H − T S",
+      "F = H − P V − T S"
+    ]
+  },
+  G: {
+    titulo: "Energia Livre de Gibbs G(T,P)",
+    naturais: ["T","P"],
+    diferencial: "dG = −S dT + V dP",
+    derivadas: [
+      "−S = (∂G/∂T)<sub>P</sub>",
+      "V = (∂G/∂P)<sub>T</sub>"
+    ],
+    maxwell: [
+      "(∂S/∂P)<sub>T</sub> = −(∂V/∂T)<sub>P</sub>"
+    ],
+    legendre: [
+      "G = U − T S + P V",
+      "F = G − P V",
+      "H = G + T S − P V"
+    ]
+  }
+};
 
-// Mantive os eventos e renderização da versão anterior
+/* Variáveis: textos ajustados conforme pedido */
+const VARIAVEIS = {
+  S: {
+    titulo: "Entropia S",
+    // Exibir com sinais de igual:
+    relacionados: ["U=U(S,V)", "H=H(S,P)"],
+    abrir: ["U","H"],            // para os botões que “abrem” os potenciais
+    conjugado: "T–S"
+  },
+  T: {  // não houve pedido de mudança específico para T; mantemos padrão
+    titulo: "Temperatura T",
+    relacionados: ["F=F(T,V)", "G=G(T,P)"],
+    abrir: ["F","G"],
+    conjugado: "T–S"
+  },
+  V: {
+    titulo: "Volume V",
+    relacionados: ["U=U(S,V)", "F=F(T,V)"], // inclui o “=”
+    abrir: ["U","F"],
+    conjugado: "P–V"
+  },
+  P: {
+    titulo: "Pressão P",
+    relacionados: ["H=H(S,P)", "G=G(T,P)"], // inclui o “=”
+    abrir: ["H","G"],
+    conjugado: "P–V"
+  }
+};
+
+/* ======== Render ======== */
+const panel = document.getElementById("panel");
+const coresPot = { U:"#60a5fa", F:"#f472b6", H:"#34d399", G:"#facc15" };
+
+function mathLine(s){ return `<div class="math">${s}</div>`; }
+
+function renderPotencial(id){
+  const p = POTENCIAIS[id];
+  const cor = coresPot[id] || "#60a5fa";
+  panel.innerHTML = `
+    <h2 style="display:flex;align-items:center;gap:10px">
+      <span style="display:inline-flex;width:10px;height:10px;border-radius:999px;background:${cor}"></span>
+      ${p.titulo}
+    </h2>
+    <div class="muted">Variáveis naturais: <b>${p.naturais.join(", ")}</b>.</div>
+
+    <div class="block">
+      <div class="small">Diferencial total</div>
+      ${mathLine(p.diferencial)}
+    </div>
+
+    <div class="block">
+      <div class="small">Derivadas conjugadas</div>
+      ${p.derivadas.map(mathLine).join("")}
+    </div>
+
+    <div class="block">
+      <div class="small">Relação(ões) de Maxwell</div>
+      ${p.maxwell.map(mathLine).join("")}
+    </div>
+
+    <div class="block">
+      <div class="small">Transformações de Legendre</div>
+      <ul style="margin:.4rem 0 .2rem .9rem">
+        ${p.legendre.map(s=>`<li>${s}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+function renderVariavel(key){
+  const v = VARIAVEIS[key];
+  const nomesBotoes = v.abrir;
+  panel.innerHTML = `
+    <h2>${v.titulo}</h2>
+    <div class="muted">Potenciais associados:</div>
+    <div class="badges">
+      ${v.relacionados.map(txt=>`<span class="badge">${txt}</span>`).join("")}
+    </div>
+    <div class="block">
+      <div class="small">Par conjugado</div>
+      <div>${v.conjugado}</div>
+    </div>
+    <div class="block">
+      <div class="small">Abrir potencial</div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px">
+        ${nomesBotoes.map(pid=>`
+          <button data-jump="${pid}" style="
+            background:#0b1222;border:1px solid #1f2937;color:#e5e7eb;
+            padding:8px 10px;border-radius:10px;cursor:pointer">
+            Abrir ${pid}
+          </button>`).join("")}
+      </div>
+    </div>
+  `;
+  panel.querySelectorAll("[data-jump]").forEach(btn=>{
+    btn.addEventListener("click", e => renderPotencial(e.currentTarget.dataset.jump));
+  });
+}
+
+/* Eventos */
+document.querySelectorAll(".node").forEach(el=>{
+  el.addEventListener("click", () => {
+    const type = el.dataset.type;
+    const id = el.dataset.id;
+    if(type === "pot") renderPotencial(id);
+    else renderVariavel(id);
+  });
+});
+
+/* Inicial: Gibbs */
+renderPotencial("G");
 </script>
 </body>
 </html>
