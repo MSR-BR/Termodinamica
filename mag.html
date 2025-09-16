@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Paramagnetismo — Brillouin, Curvas M(B) e M(T)</title>
+<style>
+  :root { --bg:#0b1020; --panel:#111833; --ink:#e8ecff; --muted:#9fb0ff; --accent:#6aa8ff; --accent2:#ffb86b; --grid:#2a335c; }
+  *{box-sizing:border-box}
+  body{margin:0; font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu; color:var(--ink); background:linear-gradient(180deg,#0b1020,#0a0f1d 60%);}  
+  header{padding:16px 16px 8px}
+  h1{margin:0 0 8px; font-size:22px}
+  p.sub{margin:0; color:var(--muted)}
+  .wrap{display:grid; grid-template-columns: 420px 1fr; gap:16px; padding:16px;}
+  .card{background:var(--panel); border:1px solid #202a52; border-radius:16px; padding:14px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .controls label{display:block; margin:10px 0 6px; color:var(--muted)}
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  input[type=range]{width:100%}
+  select, input[type=number]{background:#0e1430; color:var(--ink); border:1px solid #24306b; border-radius:10px; padding:6px 8px; width:100%}
+  button{background:#0d1535; color:#cfe2ff; border:1px solid #2a3b7a; border-radius:10px; padding:6px 10px; cursor:pointer}
+  button:hover{filter:brightness(1.1)}
+  .pill{display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border:1px solid #2a3b7a; border-radius:999px; background:#0d1535; color:#cfe2ff; font-size:12px}
+  .swatch{display:inline-block; width:10px; height:10px; border-radius:2px}
+  .legend{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px}
+  .vals{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:8px}
+  .howto{margin:10px 16px 0}
+  .howto p{margin:6px 0}
+  canvas{width:100%; height:260px; background:#0b122d; border-radius:12px; border:1px solid #1b2552}
+  .small{font-size:12px; color:#c6cffc}
+  .grid{background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 40px 40px; background-position: -1px -1px;}
+  @media (max-width: 920px){
+    .wrap{grid-template-columns: 1fr}
+    header{padding:12px}
+    h1{font-size:18px}
+    canvas{height:220px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Paramagnetismo Interativo — Função de Brillouin</h1>
+  <div class="card howto">
+    <p><strong>Como usar:</strong> Ajuste o spin principal <em>s</em>, o fator de Landé <em>g</em>, a temperatura <em>T</em> e o campo <em>B</em>. A curva da esquerda mostra <strong>m(B)</strong> com <em>T</em> fixo; a da direita mostra <strong>m(T)</strong> com <em>B</em> fixo. O eixo vertical exibe a <strong>magnetização reduzida</strong> m.</p>
+    <p>Para comparar <strong>outro spin</strong>, digite o valor (passo 1/2) e clique em <em>Adicionar curva extra</em>. Para voltar ao gráfico com apenas uma curva, use <em>Remover curva extra</em>.</p>
+    <p class="small">Modelo: m = B<sub>s</sub>(x), com x = (g · &mu;<sub>B</sub> · s · B)/(k<sub>B</sub> · T) e &mu;<sub>B</sub>/k<sub>B</sub> = 0,671 K/T.</p>
+    <p class="small">Desenvolvido por <strong>Mario Reis</strong> — Instituto de Física, Universidade Federal Fluminense (UFF) · <a href="mailto:marioreis@id.uff.br">marioreis@id.uff.br</a> · <a href="https://profmarioreis.wordpress.com" target="_blank" rel="noopener">profmarioreis.wordpress.com</a> · <span id="dateTag"></span></p>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- Painel de controles -->
+  <section class="card controls">
+    <div class="row" style="gap:12px">
+      <div style="flex:1 1 180px">
+        <label>Spin principal (s)</label>
+        <select id="spin">
+          <option value="0.5">1/2</option>
+          <option value="1">1</option>
+          <option value="1.5">3/2</option>
+          <option value="2">2</option>
+          <option value="2.5">5/2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+      <div style="flex:1 1 180px">
+        <label>Curva extra: valor de s (passo 1/2)</label>
+        <div class="row" style="gap:8px">
+          <input id="spinExtra" type="number" step="0.5" min="0.5" max="10" value="3.5"/>
+          <button id="btnAddExtra" type="button">Adicionar curva extra</button>
+          <button id="btnRemoveExtra" type="button">Remover curva extra</button>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="gap:12px; margin-top:4px">
+      <div style="flex:1 1 160px">
+        <label>Fator de Landé (g)</label>
+        <input id="lande" type="number" step="0.1" value="2.0" />
+      </div>
+      <div style="flex:1 1 160px"></div>
+    </div>
+
+    <label>Campo magnético B [Tesla] <span class="pill" id="Bval"></span></label>
+    <input id="B" type="range" min="0" max="5" step="0.01" value="1"/>
+
+    <label>Temperatura T [Kelvin] <span class="pill" id="Tval"></span></label>
+    <input id="T" type="range" min="0.5" max="150" step="0.1" value="50"/>
+
+    <div class="vals">
+      <div class="small">Constante: &mu;<sub>B</sub>/k<sub>B</sub> = 0,671 K/T</div>
+      <div class="small">Magnetização total (molar): M = N<sub>A</sub> g s &mu;<sub>B</sub> · m</div>
+    </div>
+
+    <div class="legend">
+      <div class="pill"><span class="swatch" style="background:var(--accent)"></span> Curva M(B) — T fixo: <span id="Tfix"></span> K</div>
+      <div class="pill"><span class="swatch" style="background:var(--accent2)"></span> Curva extra (se ativa)</div>
+      <div class="pill">Curva M(T) — B fixo: <span id="Bfix"></span> T</div>
+      <div class="pill">Spins: principal s=<span id="sMain"></span><span id="sExtraTag" style="display:none">; extra s=<span id="sExtra"></span></span></div>
+    </div>
+  </section>
+
+  <!-- Gráficos -->
+  <section class="card">
+    <div class="row" style="gap:12px; margin-top:8px">
+      <div style="flex:1 1 300px">
+        <div class="small" style="margin:4px 0 6px">Magnetização reduzida vs. B (T) com T = <span id="Tlab"></span> K</div>
+        <canvas id="plotB" class="grid"></canvas>
+      </div>
+      <div style="flex:1 1 300px">
+        <div class="small" style="margin:4px 0 6px">Magnetização reduzida vs. T (K) com B = <span id="Blab"></span> T</div>
+        <canvas id="plotT" class="grid"></canvas>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // =========================
+  // Constantes e elementos UI
+  // =========================
+  const MU_OVER_K = 0.671; // mu_B / k_B [K/T]
+  const B_MIN = 0, B_MAX = 5;
+  const T_MIN = 0.5, T_MAX = 150;
+  const DPR = window.devicePixelRatio || 1;
+
+  const spinSel = document.getElementById('spin');
+  const spinExtraInp = document.getElementById('spinExtra');
+  const btnAddExtra = document.getElementById('btnAddExtra');
+  const btnRemoveExtra = document.getElementById('btnRemoveExtra');
+  const landeInp = document.getElementById('lande');
+  const Bslider = document.getElementById('B');
+  const Tslider = document.getElementById('T');
+  const Bval = document.getElementById('Bval');
+  const Tval = document.getElementById('Tval');
+  const plotB = document.getElementById('plotB');
+  const plotT = document.getElementById('plotT');
+  const Tlab = document.getElementById('Tlab');
+  const Blab = document.getElementById('Blab');
+  const Tfix = document.getElementById('Tfix');
+  const Bfix = document.getElementById('Bfix');
+  const sMainTag = document.getElementById('sMain');
+  const sExtraWrap = document.getElementById('sExtraTag');
+  const sExtraTag = document.getElementById('sExtra');
+  const dateTag = document.getElementById('dateTag');
+
+  // data amigável
+  dateTag.textContent = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+
+  // estado: spin extra (opcional)
+  let extraSpin = null; // número ou null
+
+  btnAddExtra.addEventListener('click', ()=>{
+    const val = parseFloat(spinExtraInp.value);
+    if(!isFinite(val) || val < 0.5){ return; }
+    extraSpin = val;
+    sExtraTag.textContent = String(val);
+    sExtraWrap.style.display = '';
+    recompute();
+  });
+  btnRemoveExtra.addEventListener('click', ()=>{
+    extraSpin = null;
+    sExtraWrap.style.display = 'none';
+    recompute();
+  });
+
+  // =========================
+  // Função de Brillouin B_s(x)
+  // =========================
+  function coth(z){ return Math.cosh(z)/Math.sinh(z); }
+  function Bs(s, x){
+    if (!isFinite(x) || Math.abs(x)<1e-8) return 0; // limite -> 0
+    const inv2s = 1/(2*s);
+    const a = 1 + inv2s;    // (2s+1)/(2s)
+    const b = inv2s;        // 1/(2s)
+    // clamp para estabilidade numérica
+    const ax = Math.max(Math.min(a*x, 50), -50);
+    const bx = Math.max(Math.min(b*x, 50), -50);
+    return a*coth(ax) - b*coth(bx);
+  }
+
+  // Magnetização reduzida m = Bs(x)
+  function mNorm(g,s,B,T){
+    const x = (g * s * MU_OVER_K * B) / T; // adimensional
+    if (Math.abs(x) < 1e-6){
+      // expansão para x pequeno: m ≈ ((s+1)/(3s)) x
+      return ((s+1)/(3*s)) * x;
+    }
+    return Bs(s,x);
+  }
+
+  // =========================
+  // Canvas responsivo
+  // =========================
+  function fitCanvas(c){
+    const rect = c.getBoundingClientRect();
+    c.width = Math.max(320, Math.floor(rect.width * DPR));
+    c.height = Math.floor((rect.height || 260) * DPR);
+  }
+
+  // =========================
+  // Rotinas de plot (canvas)
+  // =========================
+  function clearCanvas(c){ fitCanvas(c); const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); return ctx; }
+  function axes(ctx, xlab, ylab){
+    ctx.save();
+    ctx.strokeStyle = '#3a4aa0'; ctx.lineWidth=1.2 * DPR; ctx.globalAlpha=0.9;
+    const m=32*DPR, w=ctx.canvas.width, h=ctx.canvas.height;
+    ctx.beginPath(); ctx.moveTo(m, h-m); ctx.lineTo(w-10*DPR, h-m); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(m, h-10*DPR); ctx.lineTo(m, 10*DPR); ctx.stroke();
+    ctx.fillStyle = '#cfe2ff'; ctx.font= (12*DPR)+'px system-ui';
+    ctx.fillText(xlab, w-70*DPR, h-12*DPR);
+    ctx.save(); ctx.translate(12*DPR, 22*DPR); ctx.rotate(-Math.PI/2); ctx.fillText(ylab, 0, 0); ctx.restore();
+    ctx.restore();
+  }
+  function plotCurve(ctx, xs, ys, xMin, xMax, yMin, yMax, color, dashed=false){
+    const m=32*DPR, w=ctx.canvas.width, h=ctx.canvas.height;
+    function X(x){ return m + (x - xMin)*(w- m - 10*DPR)/(xMax - xMin); }
+    function Y(y){ return h - m - (y - yMin)*(h - 2*m)/(yMax - yMin); }
+    ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=2.0*DPR; if(dashed) ctx.setLineDash([6*DPR,4*DPR]);
+    ctx.beginPath();
+    for(let i=0;i<xs.length;i++){
+      const x = X(xs[i]); const y = Y(ys[i]);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke(); ctx.restore();
+    // ticks
+    ctx.save(); ctx.fillStyle='#9fb0ff'; ctx.font=(11*DPR)+'px system-ui'; ctx.textAlign='center';
+    const ticks=6; for(let i=0;i<=ticks;i++){ const xv=xMin + i*(xMax-xMin)/ticks; const xp=m + i*(w-m-10*DPR)/ticks; ctx.fillText(xv.toFixed(1), xp, h-4*DPR); }
+    ctx.textAlign='right'; for(let j=0;j<=ticks;j++){ const yv=yMin + j*(yMax-yMin)/ticks; const yp=h - m - j*(h-2*m)/ticks; ctx.fillText(yv.toFixed(1), m-6*DPR, yp+4*DPR); }
+    ctx.restore();
+  }
+
+  // =========================
+  // Recomputar e desenhar
+  // =========================
+  function recompute(){
+    const sMain = parseFloat(spinSel.value);
+    const sExtra = extraSpin; // pode ser null
+    const g = parseFloat(landeInp.value);
+    const B = parseFloat(Bslider.value);
+    const T = parseFloat(Tslider.value);
+
+    Bval.textContent = B.toFixed(2) + ' T';
+    Tval.textContent = T.toFixed(1) + ' K';
+    Tlab.textContent = T.toFixed(1); Tfix.textContent = T.toFixed(1);
+    Blab.textContent = B.toFixed(2); Bfix.textContent = B.toFixed(2);
+    sMainTag.textContent = sMain; if(sExtra!=null){ sExtraTag.textContent = sExtra; sExtraWrap.style.display=''; } else { sExtraWrap.style.display='none'; }
+
+    // Curva m(B) em T fixo
+    const ctxB = clearCanvas(plotB); axes(ctxB, 'B (T)', 'Magnetização reduzida (m)');
+    const xsB=[], ysBMain=[], ysBExtra=[]; const Bmin=B_MIN, Bmax=B_MAX; const steps=220;
+    for(let i=0;i<=steps;i++){ const Bb=Bmin + (Bmax-Bmin)*i/steps; xsB.push(parseFloat(Bb.toFixed(3))); ysBMain.push(mNorm(g,sMain,Bb,T)); if(sExtra!=null){ ysBExtra.push(mNorm(g,sExtra,Bb,T)); }}
+    plotCurve(ctxB, xsB, ysBMain, Bmin, Bmax, 0.0, 1.05, '#6aa8ff', false);
+    if(sExtra!=null) plotCurve(ctxB, xsB, ysBExtra, Bmin, Bmax, 0.0, 1.05, '#ffb86b', true);
+
+    // Curva m(T) em B fixo (B >= 0 por construção)
+    const ctxT = clearCanvas(plotT); axes(ctxT, 'T (K)', 'Magnetização reduzida (m)');
+    const xsT=[], ysTMain=[], ysTExtra=[]; const Tmin=T_MIN, Tmax=T_MAX; for(let i=0;i<=steps;i++){ const Tt=Tmin + (Tmax-Tmin)*i/steps; xsT.push(parseFloat(Tt.toFixed(2))); ysTMain.push(mNorm(g,sMain,B, Tt)); if(sExtra!=null){ ysTExtra.push(mNorm(g,sExtra,B, Tt)); }}
+    plotCurve(ctxT, xsT, ysTMain, Tmin, Tmax, 0.0, 1.05, '#6aa8ff', false);
+    if(sExtra!=null) plotCurve(ctxT, xsT, ysTExtra, Tmin, Tmax, 0.0, 1.05, '#ffb86b', true);
+  }
+
+  [spinSel, landeInp, Bslider, Tslider].forEach(el=> el.addEventListener('input', recompute));
+  window.addEventListener('resize', recompute);
+
+  // Init
+  recompute();
+</script>
+</body>
+</html>
