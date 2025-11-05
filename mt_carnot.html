@@ -238,7 +238,7 @@
       const Vmin = Math.min(V1,V2,V3,V4), Vmax=Math.max(V1,V2,V3,V4);
       let V=V1;
       if(state===1){ V=V1; showHeat(false); }
-      if(state==='12'){ V = V1*Math.pow(V2/V1, frac); showHeat(true, +1); updateLabels('12'); }
+      if(state==='12'){ V = V1*Math.pow(V2/V1, frac); showHeat(true, -1); updateLabels('12'); }
       if(state==='23'){ V = V2*Math.pow(V3/V2, frac); showHeat(false,true); updateLabels('23'); }
       if(state==='34'){ V = V3*Math.pow(V4/V3, frac); showHeat(true, -1); updateLabels('34'); }
       if(state==='41'){ V = V4*Math.pow(V1/V4, frac); showHeat(false,true); updateLabels('41'); }
