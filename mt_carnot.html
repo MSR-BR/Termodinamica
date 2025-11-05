@@ -232,7 +232,8 @@
       positionPiston(1);
     }
 
-function positionPiston(state, frac=0){
+
+    function positionPiston(state, frac=0){
   if(!S) return;
   const {V1,V2,V3,V4} = S;
   const Vmin = Math.min(V1,V2,V3,V4), Vmax=Math.max(V1,V2,V3,V4);
@@ -243,27 +244,27 @@ function positionPiston(state, frac=0){
     showHeat(false);
   }
 
-  if(state==='12'){
+  if(state==='12'){                  // expansão isotérmica (TH)
     V = V1*Math.pow(V2/V1, frac);
-    showHeat(true, -1);       // seta vermelha ← (ok)
+    showHeat(true,  -1, +1);         // calor: ← ; trabalho: ↑
     updateLabels('12');
   }
 
-  if(state==='23'){
+  if(state==='23'){                  // expansão adiabática
     V = V2*Math.pow(V3/V2, frac);
-    showHeat(false, +1);      // seta azul ↑
+    showHeat(false, undefined, +1);  // trabalho: ↑
     updateLabels('23');
   }
 
-  if(state==='34'){
+  if(state==='34'){                  // compressão isotérmica (TC)
     V = V3*Math.pow(V4/V3, frac);
-    showHeat(true, -1);       // seta vermelha ←
+    showHeat(true,  -1, -1);         // calor: ← ; trabalho: ↓
     updateLabels('34');
   }
 
-  if(state==='41'){
+  if(state==='41'){                  // compressão adiabática
     V = V4*Math.pow(V1/V4, frac);
-    showHeat(false, -1);      // seta azul ↓
+    showHeat(false, undefined, -1);  // trabalho: ↓
     updateLabels('41');
   }
 
@@ -273,12 +274,23 @@ function positionPiston(state, frac=0){
 }
 
 
-    function showHeat(isIso, dir){
-      aQ.style.display = isIso? 'block':'none';
-      aW.style.display = 'block';
-      if(isIso){ aQ.style.transform = (dir>0? 'scaleX(1)':'scaleX(-1)'); aW.style.transform = (dir>0? 'scaleY(1)':'scaleY(-1)'); }
-      cil.classList.toggle('isolado', !isIso);
-    }
+function showHeat(isIso, dirQ, dirW){
+  // seta de calor (vermelha)
+  aQ.style.display = isIso ? 'block' : 'none';
+  if (isIso && typeof dirQ === 'number') {
+    aQ.style.transform = (dirQ > 0 ? 'scaleX(1)' : 'scaleX(-1)');
+  }
+
+  // seta de trabalho (azul)
+  aW.style.display = 'block';
+  if (typeof dirW === 'number') {
+    aW.style.transform = (dirW > 0 ? 'scaleY(1)' : 'scaleY(-1)');
+  }
+
+  // cilindro isolado nos adiabáticos
+  cil.classList.toggle('isolado', !isIso);
+}
+
 
     function updateLabels(seg){
       const map={ 'idle':'Processo atual: pronto (estado 1)', '12':'Processo atual: Expansão isotérmica (T=TH)', '23':'Processo atual: Expansão adiabática (isolado)', '34':'Processo atual: Compressão isotérmica (T=TC)', '41':'Processo atual: Compressão adiabática (isolado)' };
