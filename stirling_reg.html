@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Motor de Stirling Alfa com Regenerador</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f0f0f0; }
+  #main { width: 100%; text-align: center; margin-top: 10px; }
+  canvas { background: #ffffff; border: 1px solid #888; margin-top: 10px; }
+  #controls { margin-top: 10px; font-size: 18px; }
+  #controls input { font-size: 16px; width: 80px; }
+  #results { margin-top: 15px; font-size: 16px; }
+  button { padding: 6px 16px; font-size: 16px; cursor: pointer; margin: 4px; }
+</style>
+</head>
+<body>
+<div id="main">
+  <h1 style="font-size:28px;">Motor de Stirling Alfa – Modelo Geométrico do Ciclo</h1>
+
+<p class="desc">
+Desenvolvido por Mario Reis &ndash; Instituto de Física, Universidade
+Federal Fluminense (UFF)<br>
+<a href="mailto:marioreis@id.uff.br">marioreis@id.uff.br</a>
+&middot;
+<a href="http://profmarioreis.wordpress.com" target="_blank">profmarioreis.wordpress.com</a><br>
+Versão&nbsp;1.0 &ndash; 26&nbsp;de julho&nbsp;de&nbsp;2025
+</p>
+
+  <canvas id="stirlingCanvas" width="1100" height="650"></canvas>
+
+  <div id="controls">
+    Ângulo &theta; (virabrequim): <span id="thetaValue">0</span>°
+    <br><br>
+    <button onclick="toggleRun()">Iniciar / Pausar</button>
+    <br><br>
+    <label>V1 = V4:</label>
+    <input id="V14" type="number" value="5"> L
+    &nbsp;&nbsp;
+    <label>V2 = V3:</label>
+    <input id="V23" type="number" value="7"> L
+    <br><br>
+    <label>TH:</label>
+    <input id="TH" type="number" value="600"> K
+    &nbsp;&nbsp;
+    <label>TC:</label>
+    <input id="TC" type="number" value="300"> K
+    <br><br>
+    <button onclick="updateParametros()">Atualizar parâmetros</button>
+    <button onclick="mostrarResultados()">Calcular trabalhos e calores</button>
+  </div>
+
+  <div id="results">
+    <h3>Trabalhos e calores (gás ideal, n = 1 mol)</h3>
+    <div id="resultadoTexto">
+      W<sub>12</sub> = ?, Q<sub>12</sub> = ?<br>
+      Q<sub>23</sub> = ?<br>
+      W<sub>34</sub> = ?, Q<sub>34</sub> = ?<br>
+      Q<sub>41</sub> = ?
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------------- Parâmetros termodinâmicos ----------------
+let V1 = 5, V2 = 7, V3 = 7, V4 = 5; // em litros
+let TH = 600, TC = 300;             // em kelvin
+
+function updateParametros() {
+  const v14 = parseFloat(document.getElementById('V14').value) || 5;
+  const v23 = parseFloat(document.getElementById('V23').value) || 7;
+  const th  = parseFloat(document.getElementById('TH').value)  || 600;
+  const tc  = parseFloat(document.getElementById('TC').value)  || 300;
+  V1 = V4 = v14;
+  V2 = V3 = v23;
+  TH = th;
+  TC = tc;
+}
+
+function computeWorkAndHeat() {
+  const R  = 8.314;       // J/mol·K
+  const n  = 1.0;         // mol
+  const Cv = 1.5 * R;     // gás monoatômico
+
+  const W12 = -n * R * TH * Math.log(V2 / V1); // expansão isotérmica TH
+  const Q12 = -W12;
+
+  const Q23 = n * Cv * (TC - TH);             // resfriamento isocórico TH→TC
+
+  const W34 =  n * R * TC * Math.log(V3 / V4); // compressão isotérmica TC
+  const Q34 = -W34;
+
+  const Q41 = n * Cv * (TH - TC);            // aquecimento isocórico TC→TH
+
+  return { W12, Q12, Q23, W34, Q34, Q41 };
+}
+
+function mostrarResultados() {
+  const r = computeWorkAndHeat();
+  const f = x => x.toFixed(2);
+  document.getElementById('resultadoTexto').innerHTML =
+    `W<sub>12</sub> = ${f(r.W12)} J, &nbsp; Q<sub>12</sub> = ${f(r.Q12)} J<br>` +
+    `Q<sub>23</sub> = ${f(r.Q23)} J<br>` +
+    `W<sub>34</sub> = ${f(r.W34)} J, &nbsp; Q<sub>34</sub> = ${f(r.Q34)} J<br>` +
+    `Q<sub>41</sub> = ${f(r.Q41)} J`;
+}
+
+// ---------------- Geometria do motor (uma única manivela, duas bielas fixas) ----------------
+
+let running = true;       // animação ligada
+let theta   = 0;          // ângulo didático (0, π/2, π, 3π/2, ...)
+let phi0    = 0;          // offset mecânico para casar θ=0 com VE mínima
+
+const rodLength = 260;    // comprimento da biela (fixo)
+const crankR    = 60;     // raio do virabrequim (proporcional aos cilindros)
+const cylDrawLen = 240;   // comprimento desenhado dos cilindros
+const cylWidth  = 80;
+const pistonLen = 55;
+
+function toggleRun() { running = !running; }
+
+// resolve | base + s u - pin | = L  (s>=0)
+function solvePiston(base, u, pin) {
+  const Dx = base.x - pin.x;
+  const Dy = base.y - pin.y;
+  const Du = Dx*u.x + Dy*u.y;
+
+  const A  = 1;
+  const Bq = 2*Du;
+  const Cq = Dx*Dx + Dy*Dy - rodLength*rodLength;
+
+  let D = Bq*Bq - 4*A*Cq;
+  if (D < 0) D = 0;
+  const sqrtD = Math.sqrt(D);
+
+  let s1 = (-Bq + sqrtD)/(2*A);
+  let s2 = (-Bq - sqrtD)/(2*A);
+
+  let s = Math.min(s1,s2);
+  if (s < 0) s = Math.max(s1,s2);
+  if (s < 0) s = 0;   // garante dentro do cilindro do lado do regenerador
+
+  return {
+    x: base.x + s*u.x,
+    y: base.y + s*u.y,
+    s: s
+  };
+}
+
+// calcula phi0 de forma que θ=0 ⇒ pistão de expansão no volume mínimo (junto ao regenerador)
+function computePhi0() {
+  const canvas = document.getElementById('stirlingCanvas');
+  const cx = canvas.width  * 0.50;
+  const cy = canvas.height * 0.70;
+
+  // pontos de conexão com o regenerador
+  const regLeft  = { x: cx - 280, y: cy - 300 };
+  const regRight = { x: cx + 280, y: cy - 300 };
+
+  const center = { x: cx, y: cy };
+
+  const vE = { x: center.x - regLeft.x,  y: center.y - regLeft.y  };
+  const lenE = Math.hypot(vE.x,vE.y);
+  const uE = { x: vE.x/lenE, y: vE.y/lenE };
+
+  const baseE = regLeft;   // base dos cilindros é o lado do regenerador
+
+  let bestPhi = 0;
+  let minS    = Infinity;
+
+  for (let k=0; k<360; k++) {
+    const phi = k * Math.PI/180;
+    const pin = { x: center.x + crankR*Math.cos(phi),
+                  y: center.y + crankR*Math.sin(phi) };
+    const pistE = solvePiston(baseE,uE,pin);
+    if (pistE.s < minS) {
+      minS = pistE.s;
+      bestPhi = phi;
+    }
+  }
+  phi0 = bestPhi; // quando θ=0 ⇒ φ=phi0 ⇒ VE mínima
+}
+
+function draw() {
+  const canvas = document.getElementById('stirlingCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const cx = canvas.width  * 0.50;
+  const cy = canvas.height * 0.70;
+
+  const center = { x: cx, y: cy };
+
+  // pontos de conexão com o regenerador
+  const regLeft  = { x: cx - 280, y: cy - 300 };
+  const regRight = { x: cx + 280, y: cy - 300 };
+
+  const vE = { x: center.x - regLeft.x,  y: center.y - regLeft.y  };
+  const vC = { x: center.x - regRight.x, y: center.y - regRight.y };
+  const lenE = Math.hypot(vE.x,vE.y);
+  const lenC = Math.hypot(vC.x,vC.y);
+
+  const uE = { x: vE.x/lenE, y: vE.y/lenE };
+  const uC = { x: vC.x/lenC, y: vC.y/lenC };
+
+  const angE = Math.atan2(vE.y, vE.x);
+  const angC = Math.atan2(vC.y, vC.x);
+
+  // bases dos cilindros (lado do regenerador)
+  const baseE = regLeft;
+  const baseC = regRight;
+
+  // ponto "livre" do cilindro para desenho (lado do virabrequim)
+  const farE  = { x: baseE.x + cylDrawLen*uE.x, y: baseE.y + cylDrawLen*uE.y };
+  const farC  = { x: baseC.x + cylDrawLen*uC.x, y: baseC.y + cylDrawLen*uC.y };
+
+  // ângulo mecânico do pino (única manivela)
+  const phi = theta + phi0;
+  const pin = {
+    x: center.x + crankR*Math.cos(phi),
+    y: center.y + crankR*Math.sin(phi)
+  };
+
+  // posições dos pistões pela cinemática com biela fixa
+  const pistE = solvePiston(baseE,uE,pin);
+  const pistC = solvePiston(baseC,uC,pin);
+
+  // ---------------- Regenerador ----------------
+  const midX = (regLeft.x + regRight.x)/2;
+  const midY = (regLeft.y + regRight.y)/2;
+  ctx.save();
+  ctx.translate(midX, midY);
+  const angReg = Math.atan2(regRight.y - regLeft.y, regRight.x - regLeft.x);
+  ctx.rotate(angReg);
+  const Lreg = Math.hypot(regRight.x - regLeft.x, regRight.y - regLeft.y);
+  const grad = ctx.createLinearGradient(-Lreg/2, 0, Lreg/2, 0);
+  grad.addColorStop(0,'#ffb0b0');
+  grad.addColorStop(0.5,'#ccccff');
+  grad.addColorStop(1,'#b0d0ff');
+  ctx.fillStyle = grad;
+  ctx.fillRect(-Lreg/2, -26, Lreg, 52);
+  ctx.restore();
+
+  ctx.font = '24px Arial';
+  ctx.fillStyle = '#444';
+  ctx.textAlign = 'center';
+  ctx.fillText('regenerador', midX, midY - 35);
+
+  // ---------------- Cilindros ----------------
+  function drawCylinder(base,axis,color){
+    ctx.save();
+    ctx.translate(base.x,base.y);
+    ctx.rotate(Math.atan2(axis.y,axis.x));
+    ctx.fillStyle = color;
+    ctx.fillRect(0,-cylWidth/2,cylDrawLen,cylWidth);
+    ctx.restore();
+  }
+  drawCylinder(baseE,uE,'#ffe0dd'); // expansão
+  drawCylinder(baseC,uC,'#dde9ff'); // compressão
+
+  // ---------------- Pistões ----------------
+  function drawPiston(p,axis,color){
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.rotate(Math.atan2(axis.y,axis.x));
+    ctx.fillStyle = color;
+    ctx.fillRect(-pistonLen,-cylWidth/2+10,pistonLen,cylWidth-20);
+    ctx.restore();
+  }
+  drawPiston(pistE,uE,'#ff9e9e');
+  drawPiston(pistC,uC,'#9ebcff');
+
+  // ---------------- Virabrequim ----------------
+  const cx0 = center.x;
+  const cy0 = center.y;
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth   = 5;
+  ctx.beginPath();
+  ctx.arc(cx0,cy0,crankR,0,2*Math.PI);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx0,cy0);
+  ctx.lineTo(pin.x,pin.y);
+  ctx.stroke();
+
+  ctx.fillStyle = '#666';
+  ctx.beginPath(); ctx.arc(cx0,cy0,8,0,2*Math.PI); ctx.fill();
+  ctx.fillStyle = 'red';
+  ctx.beginPath(); ctx.arc(pin.x,pin.y,8,0,2*Math.PI); ctx.fill();
+
+  // ---------------- Bielas (comprimento fixo) ----------------
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth   = 4;
+  ctx.beginPath(); ctx.moveTo(pin.x,pin.y); ctx.lineTo(pistE.x,pistE.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pin.x,pin.y); ctx.lineTo(pistC.x,pistC.y); ctx.stroke();
+
+  // ---------------- Rótulos ----------------
+  ctx.fillStyle = '#222';
+  ctx.font = '22px Arial';
+  ctx.textAlign = 'left';
+
+  // rótulo cilindro de expansão – agora próximo ao regenerador
+  const midExpX = (baseE.x + farE.x) / 2;
+  const midExpY = (baseE.y + farE.y) / 2;
+  ctx.save();
+  // deslocado para perto do regenerador (extremidade baseE)
+  ctx.translate(regLeft.x - 10, regLeft.y + 60);
+  ctx.rotate(angE);
+  ctx.fillText('cilindro de expansão', 0, 0);
+  ctx.restore();
+
+  // rótulo cilindro de compressão – perto do início do cilindro azul, junto ao virabrequim
+  ctx.save();
+  // posição próxima à extremidade do cilindro azul voltada para o virabrequim
+  const compLabelX = farC.x + 60;  // ainda mais perto da parede do cilindro azul e mais longe do virabrequim  // aproxima mais da parede do cilindro azul e afasta do virabrequim  // aproxima do cilindro, mantendo inclinação  // afasta no sentido oposto, longe do virabrequim  // afastado do virabrequim, sem sobrepor  // afasta do virabrequim mantendo a inclinação  // mantém alinhamento horizontal
+  const compLabelY = farC.y + 20;  // desce ainda mais para manter totalmente fora da figura  // leve ajuste vertical para manter fora da figura  // pequeno ajuste vertical  // mantém posição vertical segura  // mantém deslocamento vertical seguro  // desce ainda mais  // desce ainda mais para fora da figura  // desce mais o texto para fora da figura
+  ctx.translate(compLabelX, compLabelY);
+  ctx.rotate(angC + Math.PI); // mantém a mesma inclinação, só corrige orientação
+  ctx.fillText('cilindro de compressão', 0, 0);
+  ctx.restore();
+
+  ctx.fillStyle = '#d32f2f';
+  ctx.fillText('TH', regLeft.x  - 60, regLeft.y + 90);
+  ctx.fillStyle = '#1565c0';
+  ctx.fillText('TC', regRight.x + 20, regRight.y + 90);
+
+  // mostra θ em graus (didático)
+  let deg = (theta*180/Math.PI) % 360;
+  if (deg < 0) deg += 360;
+  document.getElementById('thetaValue').innerText = deg.toFixed(1);
+}
+
+// animação
+function step() {
+  if (running) {
+    theta += 0.04; // ~2.3° por frame
+    if (theta > 2*Math.PI) theta -= 2*Math.PI;
+    draw();
+  }
+  requestAnimationFrame(step);
+}
+
+// inicialização
+updateParametros();
+computePhi0(); // ajusta phi0 para que θ=0 ⇒ VE mínima
+draw();
+requestAnimationFrame(step);
+
+</script>
+</body>
+</html>
