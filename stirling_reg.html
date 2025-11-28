@@ -51,12 +51,12 @@ Versão&nbsp;1.0 &ndash; 26&nbsp;de julho&nbsp;de&nbsp;2025
 
   <div id="results">
     <h3>Trabalhos e calores (gás ideal, n = 1 mol)</h3>
-    <div id="resultadoTexto">
-      W<sub>12</sub> = ?, Q<sub>12</sub> = ?<br>
-      Q<sub>23</sub> = ?<br>
-      W<sub>34</sub> = ?, Q<sub>34</sub> = ?<br>
-      Q<sub>41</sub> = ?
-    </div>
+<div id="resultadoTexto">
+  &Delta;W<sub>21</sub> = ?, &Delta;Q<sub>21</sub> = ?<br>
+  &Delta;Q<sub>32</sub> = ?<br>
+  &Delta;W<sub>43</sub> = ?, &Delta;Q<sub>43</sub> = ?<br>
+  &Delta;Q<sub>14</sub> = ?
+</div>
   </div>
 </div>
 
@@ -97,11 +97,11 @@ function computeWorkAndHeat() {
 function mostrarResultados() {
   const r = computeWorkAndHeat();
   const f = x => x.toFixed(2);
-  document.getElementById('resultadoTexto').innerHTML =
-    `W<sub>12</sub> = ${f(r.W12)} J, &nbsp; Q<sub>12</sub> = ${f(r.Q12)} J<br>` +
-    `Q<sub>23</sub> = ${f(r.Q23)} J<br>` +
-    `W<sub>34</sub> = ${f(r.W34)} J, &nbsp; Q<sub>34</sub> = ${f(r.Q34)} J<br>` +
-    `Q<sub>41</sub> = ${f(r.Q41)} J`;
+document.getElementById('resultadoTexto').innerHTML =
+  `&Delta;W<sub>21</sub> = ${f(r.W12)} J, &nbsp; &Delta;Q<sub>21</sub> = ${f(r.Q12)} J<br>` +
+  `&Delta;Q<sub>32</sub> = ${f(r.Q23)} J<br>` +
+  `&Delta;W<sub>43</sub> = ${f(r.W34)} J, &nbsp; &Delta;Q<sub>43</sub> = ${f(r.Q34)} J<br>` +
+  `&Delta;Q<sub>14</sub> = ${f(r.Q41)} J`;
 }
 
 // ---------------- Geometria do motor (uma única manivela, duas bielas fixas) ----------------
