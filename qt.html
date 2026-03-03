@@ -89,17 +89,28 @@
   .small{ font-size:12px; color:var(--muted) }
   .hint{ font-size:12px; color:#9dd1ff; margin-top:.4rem }
 
-  /* Posições */
-  .U.node{ left:4%; top:6%; }
-  .H.node{ right:4%; top:6%; }
-  .F.node{ left:4%; bottom:6%; }
-  .G.node{ right:4%; bottom:6%; }
+  /* ==========================
+     POSIÇÕES (CORRIGIDAS)
+     Retângulo do texto:
+       V (topo-esq)   T (topo-dir)
+       S (baixo-esq)  P (baixo-dir)
+     Potenciais nos lados:
+       F (topo), H (base), U (esq), G (dir)
+     ========================== */
 
-  .V.node{ left:50%; transform:translate(-50%,0); top:1.5%; }
-  .P.node{ right:1.5%; top:50%; transform:translate(0,-50%); }
-  .S.node{ left:1.5%; top:50%; transform:translate(0,-50%); }
-  .T.node{ left:50%; transform:translate(-50%,0); bottom:1.5%; }
+  /* Potenciais (lados) */
+  .F.node{ left:50%; transform:translate(-50%,0); top:6%; }                 /* topo */
+  .H.node{ left:50%; transform:translate(-50%,0); bottom:6%; }              /* base */
+  .U.node{ left:4%; top:50%; transform:translate(0,-50%); }                 /* esquerda */
+  .G.node{ right:4%; top:50%; transform:translate(0,-50%); }                /* direita */
 
+  /* Variáveis (vértices) */
+  .V.node{ left:12%; top:12%; }                                             /* topo-esq */
+  .T.node{ right:12%; top:12%; }                                            /* topo-dir */
+  .S.node{ left:12%; bottom:12%; }                                          /* baixo-esq */
+  .P.node{ right:12%; bottom:12%; }                                         /* baixo-dir */
+
+  /* Linhas do retângulo (mantidas) */
   .edge.top{ left:16%; right:16%; top:11.5%; }
   .edge.bottom{ left:16%; right:16%; bottom:11.5%; }
   .edge.left{ top:18%; bottom:18%; left:11.5%; }
@@ -243,10 +254,10 @@ const VARIAVEIS = {
     titulo: "Entropia S",
     // Exibir com sinais de igual:
     relacionados: ["U=U(S,V)", "H=H(S,P)"],
-    abrir: ["U","H"],            // para os botões que “abrem” os potenciais
+    abrir: ["U","H"],
     conjugado: "T–S"
   },
-  T: {  // não houve pedido de mudança específico para T; mantemos padrão
+  T: {
     titulo: "Temperatura T",
     relacionados: ["F=F(T,V)", "G=G(T,P)"],
     abrir: ["F","G"],
@@ -254,13 +265,13 @@ const VARIAVEIS = {
   },
   V: {
     titulo: "Volume V",
-    relacionados: ["U=U(S,V)", "F=F(T,V)"], // inclui o “=”
+    relacionados: ["U=U(S,V)", "F=F(T,V)"],
     abrir: ["U","F"],
     conjugado: "P–V"
   },
   P: {
     titulo: "Pressão P",
-    relacionados: ["H=H(S,P)", "G=G(T,P)"], // inclui o “=”
+    relacionados: ["H=H(S,P)", "G=G(T,P)"],
     abrir: ["H","G"],
     conjugado: "P–V"
   }
